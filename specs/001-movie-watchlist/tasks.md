@@ -33,12 +33,12 @@ Single Next.js App Router project, per plan.md:
 
 **Purpose**: Project tooling and configuration that every later phase needs, on top of the existing `create-next-app` scaffold (Next.js 16.2.11, Tailwind v4, `next-auth@beta`, `drizzle-orm`, `bcryptjs` already in `package.json`).
 
-- [ ] T001 Install remaining dependencies: `drizzle-kit`, `@neondatabase/serverless` (runtime), `vitest`, `dotenv`, `tsx` (dev) — update `package.json`/`package-lock.json` via `npm install`
-- [ ] T002 [P] Create `.env.example` at repo root documenting `DATABASE_URL`, `AUTH_SECRET`, `TMDB_API_KEY` (names and example values per quickstart.md Setup step 1)
-- [ ] T003 [P] Configure `images.remotePatterns` in `next.config.ts` for TMDB's poster host (`image.tmdb.org`, path `/t/p/**`), per research.md §1 (`images.domains` is deprecated in this Next.js version)
-- [ ] T004 [P] Update `app/layout.tsx`: change root `<html lang="en">` to `lang="pt-BR"` (FR-025)
-- [ ] T005 [P] Configure Vitest: add `vitest.config.ts` at repo root (TS/ESM, Node environment) and a `"test": "vitest run"` script in `package.json`
-- [ ] T006 Set up integration-test database infrastructure (research.md §8: tests run against a real Postgres, not mocks): add a `TEST_DATABASE_URL` variable to `.env.example` documenting the two supported options (a dedicated Neon branch, or local Docker Postgres per quickstart.md Prerequisites), wire `vitest.config.ts` to load it for integration tests, and create a shared cleanup helper `tests/integration/setup.ts` that truncates `movie_entries`, `lists`, and `users` between tests — depends on T002, T005
+- [X] T001 Install remaining dependencies: `drizzle-kit`, `@neondatabase/serverless` (runtime), `vitest`, `dotenv`, `tsx` (dev) — update `package.json`/`package-lock.json` via `npm install`
+- [X] T002 [P] Create `.env.example` at repo root documenting `DATABASE_URL`, `AUTH_SECRET`, `TMDB_API_KEY` (names and example values per quickstart.md Setup step 1)
+- [X] T003 [P] Configure `images.remotePatterns` in `next.config.ts` for TMDB's poster host (`image.tmdb.org`, path `/t/p/**`), per research.md §1 (`images.domains` is deprecated in this Next.js version)
+- [X] T004 [P] Update `app/layout.tsx`: change root `<html lang="en">` to `lang="pt-BR"` (FR-025)
+- [X] T005 [P] Configure Vitest: add `vitest.config.ts` at repo root (TS/ESM, Node environment) and a `"test": "vitest run"` script in `package.json`
+- [X] T006 Set up integration-test database infrastructure (research.md §8: tests run against a real Postgres, not mocks): add a `TEST_DATABASE_URL` variable to `.env.example` documenting the two supported options (a dedicated Neon branch, or local Docker Postgres per quickstart.md Prerequisites), wire `vitest.config.ts` to load it for integration tests, and create a shared cleanup helper `tests/integration/setup.ts` that truncates `movie_entries`, `lists`, and `users` between tests — depends on T002, T005
 
 **Checkpoint**: Tooling in place — dependencies installed, env template exists, TMDB images will load, Vitest runs, and integration tests have an isolated test database with per-test cleanup.
 
