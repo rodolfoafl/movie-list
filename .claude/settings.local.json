@@ -3,5 +3,6 @@
     "allow": [
       "Bash(npm install *)"
     ]
-  }
+  },
+  "includeCoAuthoredBy": false
 }
