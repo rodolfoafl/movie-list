@@ -186,8 +186,8 @@ A signed-in user renames a list, removes an individual movie from a list, or del
 - **FR-001**: System MUST require a signed-in session for every page except login.
 - **FR-002**: System MUST authenticate users via email and password against exactly two pre-registered (seeded) accounts; no self-service sign-up is offered.
 - **FR-003**: All signed-in users MUST see and be able to modify the same shared lists and movie entries; the system MUST NOT partition data per user.
-- **FR-004**: Users MUST be able to create a list by providing a non-empty name; the new list MUST appear in the lists overview immediately.
-- **FR-005**: System MUST reject a list name that duplicates an existing list name case-insensitively (on both create and rename), showing an inline message and taking no action.
+- **FR-004**: Users MUST be able to create a list by providing a name that is non-empty after trimming leading/trailing whitespace; the trimmed name is what gets stored. Whitespace-only input MUST be rejected inline. The new list MUST appear in the lists overview immediately.
+- **FR-005**: System MUST treat two list names as duplicates when they are equal case-insensitively after trimming leading/trailing whitespace, and MUST reject a duplicate on both create and rename with an inline message, taking no action. EXCEPTION: renaming a list to a variant of its own current name (e.g. changing only capitalization or surrounding whitespace) MUST be allowed — a list never conflicts with itself.
 - **FR-006**: Users MUST be able to rename an existing list, subject to the same non-empty and uniqueness rules as creation.
 - **FR-007**: Users MUST be able to delete a list; the system MUST ask for confirmation before deleting.
 - **FR-008**: Deleting a list MUST remove all of its movie entries but MUST NOT affect the same movie's entries in any other list.
@@ -198,16 +198,19 @@ A signed-in user renames a list, removes an individual movie from a list, or del
 - **FR-013**: System MUST display a retry-capable message, without crashing the page, when the movie search service is unavailable or rate-limited.
 - **FR-014**: System MUST keep any movie-search service credentials server-side only; they MUST never be exposed to client-side code or requests.
 - **FR-015**: Adding a movie to a list MUST store the external movie identifier plus a snapshot of its title, poster, and release year, so the list can be rendered without re-querying the search service.
-- **FR-016**: System MUST prevent a movie from being added twice to the same list and MUST indicate to the user that it is already present instead of creating a duplicate entry.
+- **FR-016**: System MUST prevent duplicate movie entries within a list, where a duplicate is defined as the same external movie identifier (TMDB id) already present in that same list. The user MUST be informed the movie is already present instead of a duplicate entry being created. Title/year similarity is NOT used for duplicate detection.
 - **FR-017**: System MUST allow the same movie to exist independently in multiple different lists.
 - **FR-018**: Users MUST be able to remove a movie from a list; the system MUST ask for confirmation before removing.
 - **FR-019**: Users MUST be able to toggle a movie entry between watched and unwatched.
-- **FR-020**: System MUST record the date a movie was marked watched and display it while the entry remains watched; the date MUST no longer be shown once the entry is set back to unwatched.
+- **FR-020**: System MUST record the current date each time a movie entry is marked watched and display it while the entry remains watched. Setting an entry back to unwatched MUST clear the stored date. Re-marking it watched later records a NEW current date (the previous date is not restored).
 - **FR-021**: Within a list, users MUST be able to filter movies by watched status: All, To watch, or Watched.
 - **FR-022**: Within a list, movies MUST be sorted alphabetically by title by default.
 - **FR-023**: System MUST persist all lists, movie entries, and watched state so that data survives application restarts and redeployments.
 - **FR-024**: All primary actions (sign in, create/rename/delete list, search, add/remove movie, toggle watched, filter) MUST be operable using only a keyboard.
 - **FR-025**: All UI text MUST be presented in Portuguese (pt-BR).
+- **FR-026**: List names MUST be limited to 60 characters (after trimming). Longer input MUST be rejected inline with a message stating the limit.
+- **FR-027**: When a list is deleted, its name immediately becomes available for reuse; creating a new list with a previously deleted list's name MUST succeed.
+- **FR-028**: The empty state for a list with no movies (FR-009) and the empty state for a search with no matches (FR-012) MUST use visually and textually distinct messages, so the two situations cannot be confused when both could appear on the same screen.
 
 ### Key Entities
 
@@ -236,3 +239,7 @@ A signed-in user renames a list, removes an individual movie from a list, or del
 - Concurrent edits by both users are resolved by last-write-wins on refresh; no real-time (live-updating) collaboration is required.
 - Movies-only scope: TV series, ratings, reviews, comments, notifications, and recommendations are not part of this feature.
 - The app is expected to run entirely within free-tier hosting, database, and movie-search API limits; no paid infrastructure is assumed.
+- Movie snapshots (title, poster, release year) are captured once at add-time and are NEVER refreshed in this scope, even if the external source later changes that movie's data. Stale snapshots are acceptable for a personal app; a manual or scheduled refresh is a possible future enhancement.
+- The external movie identifier (TMDB id) is assumed to be stable and never reused/reassigned by the provider; duplicate prevention (FR-016) and cross-list independence (FR-017) depend on this.
+- No upper bound is imposed on the number of lists or entries; unbounded growth is an accepted risk given the two-user personal scale.
+- Last-write-wins conflict resolution applies at whole-record granularity: the most recent successful save of a record replaces it entirely. Field-level merging is not attempted.
