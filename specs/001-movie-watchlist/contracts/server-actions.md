@@ -8,7 +8,7 @@ Shared error-state shape returned to `useActionState` on validation failure:
 type ActionState = { error?: string } | undefined
 ```
 
-## `app/lists/actions.ts`
+## `app/(lists)/actions.ts`
 
 ### `createList(state, formData)`
 
@@ -28,7 +28,7 @@ type ActionState = { error?: string } | undefined
 - Runs `DELETE FROM lists WHERE id = $1` in a transaction; `ON DELETE CASCADE` removes only that list's `movie_entries` (FR-008)
 - No-op-safe if the list was already deleted concurrently (returns success either way)
 
-## `app/lists/[listId]/actions.ts`
+## `app/(lists)/[listId]/actions.ts`
 
 ### `addMovieToList(listId, movie: { tmdbId, title, posterPath, releaseYear })`
 

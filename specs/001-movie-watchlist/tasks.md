@@ -99,17 +99,18 @@ Single Next.js App Router project, per plan.md:
 - [ ] T020 [P] [US2] Integration test in `tests/integration/movie-entries.test.ts`: adding a TMDB id already present in a list is rejected (no duplicate row created) and the caller is informed it's already present (FR-016) — depends on T006
 - [ ] T021 [US2] Integration test in `tests/integration/movie-entries.test.ts`: the same TMDB id can be added independently to a second list and both entries persist and toggle independently (FR-017) — same file as T020, sequential; depends on T006
 - [ ] T022 [P] [US2] Unit test in `tests/unit/tmdb-filter.test.ts`: a TMDB search response containing a result with no usable `id` has that result dropped before being returned (CHK021, research.md §5)
+- [ ] T023 [P] [US2] Unit test in `tests/unit/tmdb-search-route.test.ts`: with the TMDB fetch call mocked, the search route returns `503 { error: "search_unavailable" }` when the TMDB fetch fails or returns a non-2xx response (FR-013, contracts/tmdb-search.md)
 
 ### Implementation for User Story 2
 
-- [ ] T023 [P] [US2] Create the TMDB fetch wrapper in `app/lib/tmdb.ts`: server-only, reads `TMDB_API_KEY`, calls TMDB's title-search endpoint, maps its response shape to `{ tmdbId, title, releaseYear, posterPath, overview }`, filters out any result without a usable id (closes CHK021)
-- [ ] T024 [US2] Create the TMDB search Route Handler `app/api/tmdb/search/route.ts` (`GET`) per contracts/tmdb-search.md: calls `verifySession()` (401 if unauthenticated), returns `{ results: [] }` for empty/whitespace `q` without calling TMDB, returns `503 { error: "search_unavailable" }` on TMDB fetch failure or non-2xx — depends on T012, T023
-- [ ] T025 [P] [US2] Create the `createList` Server Action in `app/(lists)/actions.ts` per contracts/server-actions.md: trims and validates non-empty (FR-004), ≤60 chars (FR-026), case/whitespace-insensitive uniqueness (FR-005), catches the DB unique-violation race and maps it to the same duplicate-name message (CHK004) — depends on T007, T012
-- [ ] T026 [US2] Add the list-creation form to `app/(lists)/page.tsx`, wired to `createList` via `useActionState` with inline error display — depends on T016, T025
-- [ ] T027 [US2] Create the list detail page `app/(lists)/[listId]/page.tsx`: calls `verifySession()`, queries the list's movie entries ordered alphabetically by title (FR-022), and renders a distinct empty state when the list has zero movies (FR-009, FR-028) — depends on T012
-- [ ] T028 [US2] Add the movie search UI to `app/(lists)/[listId]/page.tsx`: debounced `fetch` with `AbortController` against `/api/tmdb/search`, renders poster/title/year/overview per result, shows a friendly empty state on no matches (FR-012) and a retry-capable message on `503` without crashing (FR-013), textually/visually distinct from the zero-movies empty state (FR-028) — depends on T024, T027
-- [ ] T029 [US2] Create the `addMovieToList` Server Action in `app/(lists)/[listId]/actions.ts` per contracts/server-actions.md: validates `(listId, tmdbId)` not already present (FR-016), returns `{ error: 'already_in_list' }` on duplicate, inserts the snapshot row on success (FR-015, FR-017) — depends on T007, T012
-- [ ] T030 [US2] Wire the "add to list" action from search results in `app/(lists)/[listId]/page.tsx` to `addMovieToList`, rendering an "already in this list" indicator instead of a duplicate row — depends on T028, T029
+- [ ] T024 [P] [US2] Create the TMDB fetch wrapper in `app/lib/tmdb.ts`: server-only, reads `TMDB_API_KEY`, calls TMDB's title-search endpoint, maps its response shape to `{ tmdbId, title, releaseYear, posterPath, overview }`, filters out any result without a usable id (closes CHK021)
+- [ ] T025 [US2] Create the TMDB search Route Handler `app/api/tmdb/search/route.ts` (`GET`) per contracts/tmdb-search.md: calls `verifySession()` (401 if unauthenticated), returns `{ results: [] }` for empty/whitespace `q` without calling TMDB, returns `503 { error: "search_unavailable" }` on TMDB fetch failure or non-2xx — depends on T012, T024
+- [ ] T026 [P] [US2] Create the `createList` Server Action in `app/(lists)/actions.ts` per contracts/server-actions.md: trims and validates non-empty (FR-004), ≤60 chars (FR-026), case/whitespace-insensitive uniqueness (FR-005), catches the DB unique-violation race and maps it to the same duplicate-name message (CHK004) — depends on T007, T012
+- [ ] T027 [US2] Add the list-creation form to `app/(lists)/page.tsx`, wired to `createList` via `useActionState` with inline error display — depends on T016, T026
+- [ ] T028 [US2] Create the list detail page `app/(lists)/[listId]/page.tsx`: calls `verifySession()`, queries the list's movie entries ordered alphabetically by title (FR-022), and renders a distinct empty state when the list has zero movies (FR-009, FR-028) — depends on T012
+- [ ] T029 [US2] Add the movie search UI to `app/(lists)/[listId]/page.tsx`: debounced `fetch` with `AbortController` against `/api/tmdb/search`, renders poster/title/year/overview per result, shows a friendly empty state on no matches (FR-012) and a retry-capable message on `503` without crashing (FR-013), textually/visually distinct from the zero-movies empty state (FR-028) — depends on T025, T028
+- [ ] T030 [US2] Create the `addMovieToList` Server Action in `app/(lists)/[listId]/actions.ts` per contracts/server-actions.md: validates `(listId, tmdbId)` not already present (FR-016), returns `{ error: 'already_in_list' }` on duplicate, inserts the snapshot row on success (FR-015, FR-017) — depends on T007, T012
+- [ ] T031 [US2] Wire the "add to list" action from search results in `app/(lists)/[listId]/page.tsx` to `addMovieToList`, rendering an "already in this list" indicator instead of a duplicate row — depends on T029, T030
 
 **Checkpoint**: User Story 2 is fully functional and independently testable on top of User Story 1.
 
@@ -123,13 +124,13 @@ Single Next.js App Router project, per plan.md:
 
 ### Tests for User Story 3 (business rules — research.md §8) ⚠️
 
-- [ ] T031 [P] [US3] Integration test in `tests/integration/watched.test.ts`: marking watched sets `watched_at` to today and displays it; marking unwatched clears it; re-marking watched later records a NEW date, never restoring the previous one (FR-020, research.md §8) — depends on T006
+- [ ] T032 [P] [US3] Integration test in `tests/integration/watched.test.ts`: marking watched sets `watched_at` to today and displays it; marking unwatched clears it; re-marking watched later records a NEW date, never restoring the previous one (FR-020, research.md §8) — depends on T006
 
 ### Implementation for User Story 3
 
-- [ ] T032 [US3] Create the `toggleWatched` Server Action in `app/(lists)/[listId]/actions.ts` per contracts/server-actions.md: flips `watched_at` between `NULL` and `now()` (FR-019, FR-020); no-op-safe if the entry no longer exists, returning a gentle "already removed" state (CHK018) — depends on T007, T012
-- [ ] T033 [US3] Add the watched/unwatched toggle control and watched-date display to `app/(lists)/[listId]/page.tsx`, wired to `toggleWatched` — depends on T027, T032
-- [ ] T034 [US3] Add the watched-status filter (All / To watch / Watched) to `app/(lists)/[listId]/page.tsx` (FR-021) — depends on T027
+- [ ] T033 [US3] Create the `toggleWatched` Server Action in `app/(lists)/[listId]/actions.ts` per contracts/server-actions.md: flips `watched_at` between `NULL` and `now()` (FR-019, FR-020); no-op-safe if the entry no longer exists, returning a gentle "already removed" state (CHK018) — depends on T007, T012
+- [ ] T034 [US3] Add the watched/unwatched toggle control and watched-date display to `app/(lists)/[listId]/page.tsx`, wired to `toggleWatched` — depends on T028, T033
+- [ ] T035 [US3] Add the watched-status filter (All / To watch / Watched) to `app/(lists)/[listId]/page.tsx` (FR-021) — depends on T028
 
 **Checkpoint**: User Story 3 is fully functional and independently testable on top of User Stories 1–2.
 
@@ -143,17 +144,18 @@ Single Next.js App Router project, per plan.md:
 
 ### Tests for User Story 4 (business rules — research.md §8) ⚠️
 
-- [ ] T035 [P] [US4] Integration test in `tests/integration/lists.test.ts`: renaming a list to a case/whitespace variant of its own current name succeeds — a list never conflicts with itself (FR-005 exception) — depends on T006
-- [ ] T036 [US4] Integration test in `tests/integration/lists.test.ts`: deleting a list removes only that list's `movie_entries`; the same TMDB id's entry in a different list is untouched (FR-008, cascade delete, research.md §8) — same file as T035, sequential; depends on T006
+- [ ] T036 [P] [US4] Integration test in `tests/integration/lists.test.ts`: renaming a list to a case/whitespace variant of its own current name succeeds — a list never conflicts with itself (FR-005 exception) — depends on T006
+- [ ] T037 [US4] Integration test in `tests/integration/lists.test.ts`: deleting a list removes only that list's `movie_entries`; the same TMDB id's entry in a different list is untouched (FR-008, cascade delete, research.md §8) — same file as T036, sequential; depends on T006
+- [ ] T038 [US4] Integration test in `tests/integration/lists.test.ts`: creating a new list reusing the name of a just-deleted list succeeds (FR-027) — same file as T037, sequential; depends on T006
 
 ### Implementation for User Story 4
 
-- [ ] T037 [P] [US4] Create the `renameList` Server Action in `app/(lists)/actions.ts` per contracts/server-actions.md: same validation as `createList` (non-empty, ≤60 chars, uniqueness) but excludes the list's own current row from the duplicate check (FR-005 exception, FR-006) — depends on T025
-- [ ] T038 [US4] Create the `deleteList` Server Action in `app/(lists)/actions.ts` per contracts/server-actions.md: deletes the list inside a transaction, relying on `ON DELETE CASCADE` for its `movie_entries` (FR-007, FR-008); no-op-safe if already deleted concurrently — depends on T007, T012
-- [ ] T039 [US4] Create the `removeMovieFromList` Server Action in `app/(lists)/[listId]/actions.ts` per contracts/server-actions.md: deletes one movie entry by id (FR-018); no-op-safe if the entry no longer exists (CHK018) — depends on T007, T012
-- [ ] T040 [US4] Add rename UI (inline edit + confirmation) to `app/(lists)/page.tsx`, wired to `renameList` — depends on T016, T037
-- [ ] T041 [US4] Add delete-list confirmation dialog to `app/(lists)/page.tsx`, wired to `deleteList` — depends on T016, T038
-- [ ] T042 [US4] Add remove-movie confirmation dialog to `app/(lists)/[listId]/page.tsx`, wired to `removeMovieFromList` — depends on T027, T039
+- [ ] T039 [P] [US4] Create the `renameList` Server Action in `app/(lists)/actions.ts` per contracts/server-actions.md: same validation as `createList` (non-empty, ≤60 chars, uniqueness) but excludes the list's own current row from the duplicate check (FR-005 exception, FR-006) — depends on T026
+- [ ] T040 [US4] Create the `deleteList` Server Action in `app/(lists)/actions.ts` per contracts/server-actions.md: deletes the list inside a transaction, relying on `ON DELETE CASCADE` for its `movie_entries` (FR-007, FR-008); no-op-safe if already deleted concurrently — depends on T007, T012
+- [ ] T041 [P] [US4] Create the `removeMovieFromList` Server Action in `app/(lists)/[listId]/actions.ts` per contracts/server-actions.md: deletes one movie entry by id (FR-018); no-op-safe if the entry no longer exists (CHK018) — depends on T007, T012
+- [ ] T042 [US4] Add rename UI (inline edit + confirmation) to `app/(lists)/page.tsx`, wired to `renameList` — depends on T016, T039
+- [ ] T043 [US4] Add delete-list confirmation dialog to `app/(lists)/page.tsx`, wired to `deleteList` — depends on T016, T040
+- [ ] T044 [US4] Add remove-movie confirmation dialog to `app/(lists)/[listId]/page.tsx`, wired to `removeMovieFromList` — depends on T028, T041
 
 **Checkpoint**: All four user stories are independently functional.
 
@@ -163,11 +165,11 @@ Single Next.js App Router project, per plan.md:
 
 **Purpose**: Non-functional requirements that span all stories (spec.md §4 Non-functional Requirements).
 
-- [ ] T043 [P] Add a placeholder poster asset (e.g. `public/poster-placeholder.svg`) and render it wherever `posterPath` is `null`, in both search results and list entries (spec Edge Cases)
-- [ ] T044 Audit keyboard-reachability of every primary action — sign in, create/rename/delete list, search, add/remove movie, toggle watched, filter — and fix any dead ends (FR-024, SC-005)
-- [ ] T045 Run Lighthouse (mobile) against the lists overview and a list detail page; fix findings until performance ≥ 90 and accessibility ≥ 90 (spec Non-functional Requirements)
-- [ ] T046 Verify usability at 360px width with no horizontal scroll on both the lists overview and list detail page (SC-004)
-- [ ] T047 Run the full quickstart.md validation walkthrough end-to-end (all four numbered scenarios) and fix any gaps found
+- [ ] T045 [P] Add a placeholder poster asset (e.g. `public/poster-placeholder.svg`) and render it wherever `posterPath` is `null`, in both search results and list entries (spec Edge Cases)
+- [ ] T046 Audit keyboard-reachability of every primary action — sign in, create/rename/delete list, search, add/remove movie, toggle watched, filter — and fix any dead ends (FR-024, SC-005)
+- [ ] T047 Run Lighthouse (mobile) against the lists overview and a list detail page; fix findings until performance ≥ 90 and accessibility ≥ 90 (spec Non-functional Requirements)
+- [ ] T048 Verify usability at 360px width with no horizontal scroll on both the lists overview and list detail page (SC-004)
+- [ ] T049 Run the full quickstart.md validation walkthrough end-to-end (all four numbered scenarios) and fix any gaps found
 
 ---
 
@@ -178,9 +180,9 @@ Single Next.js App Router project, per plan.md:
 - **Setup (Phase 1)**: No dependencies — start immediately. T006 (test DB infrastructure) depends on T002 and T005 within this phase.
 - **Foundational (Phase 2)**: Depends on Setup. Data layer (T007–T010) before Auth (T011–T015) — the seed script needs the schema and client; auth needs the DB client to look up users. **Blocks all user stories.**
 - **User Story 1 (Phase 3)**: Depends on Foundational only
-- **User Story 2 (Phase 4)**: Depends on Foundational; its business-rule tests (T018–T022) additionally depend on T006 (test DB infrastructure); uses the lists overview page from US1 (T016) as its mount point but is independently testable via its own Server Actions and route handler
-- **User Story 3 (Phase 5)**: Depends on Foundational; its business-rule test (T031) additionally depends on T006; uses the list detail page from US2 (T027) as its mount point
-- **User Story 4 (Phase 6)**: Depends on Foundational; its business-rule tests (T035–T036) additionally depend on T006; extends `app/(lists)/actions.ts` (from T025) and the pages from US1/US2
+- **User Story 2 (Phase 4)**: Depends on Foundational; its business-rule tests (T018–T023) additionally depend on T006 (test DB infrastructure) — except T023, which mocks TMDB and needs no DB; uses the lists overview page from US1 (T016) as its mount point but is independently testable via its own Server Actions and route handler
+- **User Story 3 (Phase 5)**: Depends on Foundational; its business-rule test (T032) additionally depends on T006; uses the list detail page from US2 (T028) as its mount point
+- **User Story 4 (Phase 6)**: Depends on Foundational; its business-rule tests (T036–T038) additionally depend on T006; extends `app/(lists)/actions.ts` (from T026) and the pages from US1/US2
 - **Polish (Phase 7)**: Depends on all four user stories being complete
 
 ### User Story Dependencies
@@ -196,26 +198,27 @@ Per spec.md, all four stories share the same underlying pages/action files rathe
 
 - Tests (where included) are written first and must fail before implementation
 - Data-layer/action tasks before the UI tasks that wire them up
-- Route handler depends on its underlying `lib` wrapper (T024 depends on T023)
+- Route handler depends on its underlying `lib` wrapper (T025 depends on T024)
 
 ### Parallel Opportunities
 
 - All Setup tasks marked [P] (T002–T005) can run in parallel once T001 (dependency install) completes; T006 must follow T002 and T005
 - T008 (DB client) can run in parallel with T007 only if the schema import isn't needed yet — in practice T008 imports `schema.ts`, so treat T007 → T008 as sequential despite the [P] marker being omitted
 - T014 (login page) and T015 (login actions) can be built in parallel — different files
-- Within US2: T018 and T020 and T022 can run in parallel (three different test files, once T006 is done); T019 must follow T018 (same file) and T021 must follow T020 (same file)
-- Within US2 implementation: T023 (tmdb.ts) and T025 (createList action) can run in parallel — different files, no shared dependency
-- Within US4: T035 and T036 are same-file (sequential); T037 and T039 touch different files and can run in parallel
+- Within US2: T018, T020, T022, and T023 can run in parallel (four different test files, once T006 is done — T023 needs no DB at all since TMDB is mocked); T019 must follow T018 (same file) and T021 must follow T020 (same file)
+- Within US2 implementation: T024 (tmdb.ts) and T026 (createList action) can run in parallel — different files, no shared dependency
+- Within US4: T036, T037, and T038 are same-file (sequential, `tests/integration/lists.test.ts`); T039 and T041 touch different files and can run in parallel
 
 ---
 
 ## Parallel Example: User Story 2 tests
 
 ```bash
-# Launch together (three different files, once T006 test DB infrastructure is done):
+# Launch together (four different files, once T006 test DB infrastructure is done — except the last, which needs no DB):
 Task: "Integration test: duplicate list name rejection in tests/integration/lists.test.ts"
 Task: "Integration test: duplicate movie-in-list rejection in tests/integration/movie-entries.test.ts"
 Task: "Unit test: TMDB result id-filter in tests/unit/tmdb-filter.test.ts"
+Task: "Unit test: TMDB search route 503 on fetch failure (mocked) in tests/unit/tmdb-search-route.test.ts"
 
 # Then, same-file follow-ups (sequential within each file):
 Task: "Integration test: concurrent-create race in tests/integration/lists.test.ts"

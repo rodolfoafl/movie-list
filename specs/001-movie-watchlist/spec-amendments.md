@@ -1,5 +1,7 @@
 # Spec Amendments — Data Integrity Checklist Resolution
 
+**Status:** APPLIED — fully merged into spec.md on 2026-07-21. Kept as historical record of the data-integrity checklist resolution.
+
 **Date:** 2026-07-21
 **Applies to:** specs/001-movie-watchlist/spec.md
 **Source:** checklists/data-integrity.md review
