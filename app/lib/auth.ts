@@ -8,6 +8,14 @@ import { users } from "./db/schema";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   session: { strategy: "jwt" },
+  callbacks: {
+    session({ session, token }) {
+      if (token.sub) {
+        session.user.id = token.sub;
+      }
+      return session;
+    },
+  },
   providers: [
     Credentials({
       credentials: {
