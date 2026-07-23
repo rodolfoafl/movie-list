@@ -82,3 +82,52 @@ rather than Auth.js's built-in default.
 **Lesson**: neither fix was required by the spec or contract as originally
 written, and a spec-compliance review would not have flagged their absence —
 reviewer passes spec-conformant code; beyond-spec hardening is human review's job.
+
+## 2026-07-22 (retroactive) — process findings from the Phase 1 sessions
+
+- **Feature branch never created**: Spec Kit's workflow implies a feature branch
+  (plan.md header says `Branch: 001-movie-watchlist`), but no branch was ever
+  created; implementation started directly on `main` and was only noticed
+  mid-Phase-1. Recovered without loss (`git checkout -b` with uncommitted work).
+  Lesson: current branch is part of the human's session-start checklist — don't
+  assume the tooling handled it.
+
+- **Per-task commit rule ignored**: tasks.md's own notes say "commit after each
+  task or logical group", yet Phase 1 ran to completion with zero commits.
+  Advisory rules in artifacts don't survive contact with implementation
+  momentum; the commit discipline had to be restated explicitly in each phase's
+  kickoff prompt to hold.
+
+- **Manual .env step had no gate**: quickstart.md documents creating `.env.local`
+  as a manual setup step, but nothing in the flow reminded the human before the
+  first phase that depends on it (Foundational: drizzle-kit push + seed). Caught
+  by conversation, not by process.
+
+## 2026-07-23 — Phase 3 checkpoint, browser-verification tooling
+
+- **Playwright MCP first find**: browser verification immediately caught the
+  page `<title>` still reading "Create Next App" — missed by build, tsc, the
+  conformance reviewer and two humans, because metadata was in no FR/contract.
+  Lesson: visual verification catches a class of defect no artifact-based
+  review sees.
+
+- **Tool-artifact pollution**: Playwright MCP screenshots/logs handled via
+  structural containment (`--output-dir .playwright-mcp` + gitignore) instead
+  of a behavioral "clean up after yourself" rule. Lesson: prefer making
+  artifacts irrelevant (config-level containment) over multi-step advisory
+  rules, which degrade as context fills.
+
+- **Unmapped destructive change (Phase 3)**: T016 required deleting the
+  scaffold's `app/page.tsx` (route collision — route groups share the `/` URL
+  with `app/(lists)/page.tsx`). No task mapped this; the agent resolved it
+  autonomously and correctly, and the conformance reviewer did not flag the
+  unmapped deletion. Lesson: the plan didn't account for interactions with
+  pre-existing scaffold files, and reviewers may absorb unmapped deletions
+  silently — the human diff pass is the layer that catches destructive changes
+  outside task scope.
+
+- **Unspecified addition (Phase 3)**: lists overview ordered alphabetically
+  (`asc(lists.name)`) by agent choice; no FR mandates overview ordering
+  (FR-022 covers movies within a list only). Flagged by the reviewer as
+  informational; accepted without amending the spec — artifact amendments are
+  reserved for contract-behavior changes.
