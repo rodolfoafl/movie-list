@@ -77,8 +77,8 @@ Single Next.js App Router project, per plan.md:
 
 ### Implementation for User Story 1
 
-- [ ] T016 [US1] Create the lists overview page `app/(lists)/page.tsx`: calls `verifySession()`, queries all `lists`, renders each with a link to its detail page, and shows an empty state when there are zero lists (Acceptance Scenario 1, 4)
-- [ ] T017 [US1] Add a logout control to the lists overview page invoking `logoutAction` (T015)
+- [X] T016 [US1] Create the lists overview page `app/(lists)/page.tsx`: calls `verifySession()`, queries all `lists`, renders each with a link to its detail page, and shows an empty state when there are zero lists (Acceptance Scenario 1, 4)
+- [X] T017 [US1] Add a logout control to the lists overview page invoking `logoutAction` (T015)
 
 **Checkpoint**: User Story 1 is fully functional and independently testable — login → lists overview → logout → redirect-when-signed-out all work.
 
