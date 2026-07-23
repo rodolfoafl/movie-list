@@ -67,3 +67,18 @@ Ran `npm uninstall @auth/drizzle-adapter`. Updated:
 
 `drizzle-orm` itself stays — it's what `authorize()` and every other query in the
 app run on. Only the Auth.js-specific adapter package was dead weight.
+
+## 2026-07-22 — T011 follow-up: auth hardening beyond spec
+
+Two fixes applied to `app/lib/auth.ts` after T011 was already spec-conformant and
+reviewed: (1) timing-safe `authorize()` — unknown-email lookups now run
+`bcrypt.compare()` against a precomputed `DUMMY_HASH` instead of short-circuiting
+on `!user`, so unknown-email and wrong-password failures take near-identical time
+(documented in `contracts/auth.md`); (2) explicit `pages: { signIn: "/login" }` in
+the NextAuth config, so every internal Auth.js flow (e.g. redirects on
+`UntrustedHost`/`CredentialsSignin` style errors) lands on our own login page
+rather than Auth.js's built-in default.
+
+**Lesson**: neither fix was required by the spec or contract as originally
+written, and a spec-compliance review would not have flagged their absence —
+reviewer passes spec-conformant code; beyond-spec hardening is human review's job.

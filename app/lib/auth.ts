@@ -6,8 +6,17 @@ import Credentials from "next-auth/providers/credentials";
 import { db } from "./db/client";
 import { users } from "./db/schema";
 
+// bcrypt hash of a random, unused string — never a real password.
+// Used so unknown-email lookups still pay a bcrypt.compare cost, keeping
+// timing indistinguishable from a wrong-password attempt.
+const DUMMY_HASH =
+  "$2b$10$fLXQkt1ykbqNhPwqORgkKOiO1mHHYgpHAiH5qqeH2f8cNOWtWdnyq";
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   session: { strategy: "jwt" },
+  pages: {
+    signIn: "/login",
+  },
   callbacks: {
     session({ session, token }) {
       if (token.sub) {
@@ -36,15 +45,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           .where(eq(users.email, email))
           .limit(1);
 
-        if (!user) {
-          return null;
-        }
-
         const passwordMatches = await bcrypt.compare(
           password,
-          user.passwordHash
+          user?.passwordHash ?? DUMMY_HASH
         );
-        if (!passwordMatches) {
+
+        if (!user || !passwordMatches) {
           return null;
         }
 
