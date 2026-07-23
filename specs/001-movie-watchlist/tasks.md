@@ -52,18 +52,18 @@ Single Next.js App Router project, per plan.md:
 
 ### Data layer
 
-- [ ] T007 Create Drizzle schema in `app/lib/db/schema.ts`: `users`, `lists`, `movie_entries` tables per data-model.md, including the `UNIQUE INDEX ON lists (lower(trim(name)))` and `UNIQUE INDEX ON movie_entries (list_id, tmdb_id)`, and `ON DELETE CASCADE` on `movie_entries.list_id`; add `drizzle.config.ts` at repo root pointing to this schema and to `drizzle/` as the migrations output dir
-- [ ] T008 [P] Create the Neon HTTP driver client in `app/lib/db/client.ts` (`drizzle-orm/neon-http` + `@neondatabase/serverless`, reads `DATABASE_URL`)
-- [ ] T009 Generate and apply the initial migration (`npx drizzle-kit generate` then `npx drizzle-kit push`) — depends on T007; produces files under `drizzle/`
-- [ ] T010 Create the user seed script `scripts/seed-users.ts` (bcrypt-hashes passwords via `bcryptjs`, inserts/upserts the two known users into `users`, accepts repeated `--email`/`--password` CLI args per quickstart.md Setup step 3) and add a `"seed:users": "tsx scripts/seed-users.ts"` script in `package.json` — depends on T007, T008
+- [X] T007 Create Drizzle schema in `app/lib/db/schema.ts`: `users`, `lists`, `movie_entries` tables per data-model.md, including the `UNIQUE INDEX ON lists (lower(trim(name)))` and `UNIQUE INDEX ON movie_entries (list_id, tmdb_id)`, and `ON DELETE CASCADE` on `movie_entries.list_id`; add `drizzle.config.ts` at repo root pointing to this schema and to `drizzle/` as the migrations output dir
+- [X] T008 [P] Create the Neon HTTP driver client in `app/lib/db/client.ts` (`drizzle-orm/neon-http` + `@neondatabase/serverless`, reads `DATABASE_URL`)
+- [X] T009 Generate and apply the initial migration (`npx drizzle-kit generate` then `npx drizzle-kit push`) — depends on T007; produces files under `drizzle/`
+- [X] T010 Create the user seed script `scripts/seed-users.ts` (bcrypt-hashes passwords via `bcryptjs`, inserts/upserts the two known users into `users`, accepts repeated `--email`/`--password` CLI args per quickstart.md Setup step 3) and add a `"seed:users": "tsx scripts/seed-users.ts"` script in `package.json` — depends on T007, T008
 
 ### Auth
 
-- [ ] T011 Configure Auth.js in `app/lib/auth.ts`: Credentials provider only, `session: { strategy: "jwt" }`, `authorize()` looks up the user by email via Drizzle (T008's client) and verifies the password with `bcryptjs` against `password_hash` — per research.md §4 and contracts/auth.md (no adapter, no OAuth) — depends on T008
-- [ ] T012 Create the DAL's `verifySession()` in `app/lib/dal.ts`: verifies/decodes the JWT session via Auth.js `auth()`, checks expiry, redirects to `/login` when missing/expired, returns `{ userId }` on success — per contracts/auth.md — depends on T011
-- [ ] T013 Create `proxy.ts` at repo root (Next.js 16 convention — exported function must be named `proxy`, not `middleware`): redirects unauthenticated visitors to `/login` for every route except `/login`, redirects authenticated visitors away from `/login` to `/` — per contracts/auth.md and research.md §1 — depends on T011
-- [ ] T014 [P] Create the login page UI in `app/login/page.tsx`: email/password form in pt-BR, wired to `useActionState`, inline error rendering
-- [ ] T015 [P] Create `signInAction` and `logoutAction` in `app/login/actions.ts` per contracts/auth.md (`signIn('credentials', ...)` with `redirect: false`, maps `CredentialsSignin` to `{ error: 'E-mail ou senha inválidos.' }`; `logoutAction` calls `signOut()`) — depends on T011
+- [X] T011 Configure Auth.js in `app/lib/auth.ts`: Credentials provider only, `session: { strategy: "jwt" }`, `authorize()` looks up the user by email via Drizzle (T008's client) and verifies the password with `bcryptjs` against `password_hash` — per research.md §4 and contracts/auth.md (no adapter, no OAuth) — depends on T008
+- [X] T012 Create the DAL's `verifySession()` in `app/lib/dal.ts`: verifies/decodes the JWT session via Auth.js `auth()`, checks expiry, redirects to `/login` when missing/expired, returns `{ userId }` on success — per contracts/auth.md — depends on T011
+- [X] T013 Create `proxy.ts` at repo root (Next.js 16 convention — exported function must be named `proxy`, not `middleware`): redirects unauthenticated visitors to `/login` for every route except `/login`, redirects authenticated visitors away from `/login` to `/` — per contracts/auth.md and research.md §1 — depends on T011
+- [X] T014 [P] Create the login page UI in `app/login/page.tsx`: email/password form in pt-BR, wired to `useActionState`, inline error rendering
+- [X] T015 [P] Create `signInAction` and `logoutAction` in `app/login/actions.ts` per contracts/auth.md (`signIn('credentials', ...)` with `redirect: false`, maps `CredentialsSignin` to `{ error: 'E-mail ou senha inválidos.' }`; `logoutAction` calls `signOut()`) — depends on T011
 
 **Checkpoint**: Schema is migrated, both users are seeded, and a user can sign in/out with session protection enforced on every other route. User story work can now begin.
 
