@@ -6,6 +6,8 @@ import { db } from "@/app/lib/db/client";
 import { lists } from "@/app/lib/db/schema";
 import { logoutAction } from "@/app/login/actions";
 
+import { CreateListForm } from "./CreateListForm";
+
 export default async function ListsOverviewPage() {
   await verifySession();
 
@@ -30,6 +32,8 @@ export default async function ListsOverviewPage() {
             </button>
           </form>
         </div>
+
+        <CreateListForm />
 
         {allLists.length === 0 ? (
           <p className="mt-8 text-zinc-600 dark:text-zinc-400">
