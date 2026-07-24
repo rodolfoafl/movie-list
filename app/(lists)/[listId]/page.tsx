@@ -7,8 +7,8 @@ import { verifySession } from "@/app/lib/dal";
 import { db } from "@/app/lib/db/client";
 import { lists, movieEntries } from "@/app/lib/db/schema";
 
-import { toggleWatchedFormAction } from "./actions";
 import { MovieSearch } from "./MovieSearch";
+import { WatchedToggle } from "./WatchedToggle";
 
 const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w200";
 
@@ -170,17 +170,10 @@ export default async function ListDetailPage({
                       </p>
                     )}
                   </div>
-                  <form
-                    action={toggleWatchedFormAction.bind(null, entry.id)}
-                    className="flex-shrink-0"
-                  >
-                    <button
-                      type="submit"
-                      className="rounded border border-black/15 px-3 py-1.5 text-sm text-zinc-700 transition-colors hover:bg-black/5 dark:border-white/15 dark:text-zinc-300 dark:hover:bg-white/5"
-                    >
-                      {entry.watchedAt ? "Marcar como não assistido" : "Marcar como assistido"}
-                    </button>
-                  </form>
+                  <WatchedToggle
+                    entryId={entry.id}
+                    watched={entry.watchedAt !== null}
+                  />
                 </li>
               ))}
             </ul>

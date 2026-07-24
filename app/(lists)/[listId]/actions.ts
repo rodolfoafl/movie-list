@@ -81,6 +81,8 @@ export async function toggleWatched(
   revalidatePath(`/${entry.listId}`);
 }
 
-export async function toggleWatchedFormAction(entryId: string) {
-  await toggleWatched(entryId);
+export async function toggleWatchedAction(
+  entryId: string
+): Promise<ToggleWatchedState> {
+  return toggleWatched(entryId);
 }
