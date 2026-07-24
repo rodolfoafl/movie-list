@@ -124,13 +124,13 @@ Single Next.js App Router project, per plan.md:
 
 ### Tests for User Story 3 (business rules — research.md §8) ⚠️
 
-- [ ] T032 [P] [US3] Integration test in `tests/integration/watched.test.ts`: marking watched sets `watched_at` to today and displays it; marking unwatched clears it; re-marking watched later records a NEW date, never restoring the previous one (FR-020, research.md §8) — depends on T006
+- [X] T032 [P] [US3] Integration test in `tests/integration/watched.test.ts`: marking watched sets `watched_at` to today and displays it; marking unwatched clears it; re-marking watched later records a NEW date, never restoring the previous one (FR-020, research.md §8) — depends on T006
 
 ### Implementation for User Story 3
 
-- [ ] T033 [US3] Create the `toggleWatched` Server Action in `app/(lists)/[listId]/actions.ts` per contracts/server-actions.md: flips `watched_at` between `NULL` and `now()` (FR-019, FR-020); no-op-safe if the entry no longer exists, returning a gentle "already removed" state (CHK018) — depends on T007, T012
-- [ ] T034 [US3] Add the watched/unwatched toggle control and watched-date display to `app/(lists)/[listId]/page.tsx`, wired to `toggleWatched` — depends on T028, T033
-- [ ] T035 [US3] Add the watched-status filter (All / To watch / Watched) to `app/(lists)/[listId]/page.tsx` (FR-021) — depends on T028
+- [X] T033 [US3] Create the `toggleWatched` Server Action in `app/(lists)/[listId]/actions.ts` per contracts/server-actions.md: flips `watched_at` between `NULL` and `now()` (FR-019, FR-020); no-op-safe if the entry no longer exists, returning a gentle "already removed" state (CHK018) — depends on T007, T012
+- [X] T034 [US3] Add the watched/unwatched toggle control and watched-date display to `app/(lists)/[listId]/page.tsx`, wired to `toggleWatched` — depends on T028, T033
+- [X] T035 [US3] Add the watched-status filter (All / To watch / Watched) to `app/(lists)/[listId]/page.tsx` (FR-021) — depends on T028
 
 **Checkpoint**: User Story 3 is fully functional and independently testable on top of User Stories 1–2.
 
