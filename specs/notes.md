@@ -144,3 +144,22 @@ reviewer passes spec-conformant code; beyond-spec hardening is human review's jo
   observed behavior. Fixed and re-verified (tests 6/6, type-check, browser).
   Lesson: the artifact-diffing reviewer earns its keep on divergences that
   neither builds, tests-as-written, nor visual verification can surface.
+
+  ## 2026-07-24 — Scope gap discovered mid-implementation: legacy feature parity
+
+- **Standalone search page missed at spec time**: the original 2020 app had a
+  global movie-search page (search without entering a list first); the rebuild's
+  spec deliberately models search as an in-list action (FR-010, §3.2 "from
+  within a list") and this parity gap only surfaced during Phase 4/5, recalled
+  by the product owner from memory. Root cause is a process gap, not a memory
+  one: requirements elicitation worked from conversation and feature
+  description, but never audited the legacy app screen-by-screen for feature
+  parity — a systematic walkthrough of the old repo's routes would have
+  surfaced this before spec freeze. Decision: NOT smuggled into the current
+  implementation (it would bypass FRs, tests, and the conformance reviewer);
+  deferred as a proper post-MVP feature cycle (`002-global-search`, with its
+  own spec — search from anywhere, per-result target-list picker, reusing the
+  existing TMDB route handler). Lesson: for rebuilds, add "inventory the
+  legacy system's surfaces" as an explicit elicitation step; scope changes
+  discovered mid-flight enter through a new spec cycle, never through an
+  implementation prompt.
