@@ -64,6 +64,8 @@ describe("toggleWatched — watched date lifecycle (FR-020)", () => {
       .where(eq(movieEntries.id, entryId));
     expect(afterUnmark.watchedAt).toBeNull();
 
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
     await toggleWatched(entryId);
 
     const [afterRemark] = await db
@@ -72,7 +74,7 @@ describe("toggleWatched — watched date lifecycle (FR-020)", () => {
       .where(eq(movieEntries.id, entryId));
     expect(afterRemark.watchedAt).not.toBeNull();
     expect(isToday(afterRemark.watchedAt as Date)).toBe(true);
-    expect((afterRemark.watchedAt as Date).getTime()).toBeGreaterThanOrEqual(
+    expect((afterRemark.watchedAt as Date).getTime()).toBeGreaterThan(
       firstWatchedAt.getTime()
     );
   });
