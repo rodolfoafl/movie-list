@@ -131,3 +131,16 @@ reviewer passes spec-conformant code; beyond-spec hardening is human review's jo
   (FR-022 covers movies within a list only). Flagged by the reviewer as
   informational; accepted without amending the spec — artifact amendments are
   reserved for contract-behavior changes.
+
+## 2026-07-24 — Phase 4 checkpoint: reviewer's first real catch
+
+- **Case-insensitive sort divergence (T028)**: the list detail page sorted
+  movies with `asc(movieEntries.title)` (case-sensitive, collation-dependent)
+  while `data-model.md` explicitly specifies `ORDER BY lower(title)` for
+  FR-022. Invisible to the eye until data like "avatar" and "Avatar" coexist —
+  the class of divergence that works until data proves otherwise. Caught by
+  the spec-compliance reviewer on its fourth audit (first real finding),
+  precisely because it cross-checks code against artifact text rather than
+  observed behavior. Fixed and re-verified (tests 6/6, type-check, browser).
+  Lesson: the artifact-diffing reviewer earns its keep on divergences that
+  neither builds, tests-as-written, nor visual verification can surface.
