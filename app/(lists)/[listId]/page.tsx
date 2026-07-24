@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { asc, eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { notFound } from "next/navigation";
 
 import { verifySession } from "@/app/lib/dal";
@@ -34,7 +34,7 @@ export default async function ListDetailPage({
     .select()
     .from(movieEntries)
     .where(eq(movieEntries.listId, listId))
-    .orderBy(asc(movieEntries.title));
+    .orderBy(sql`lower(${movieEntries.title})`);
 
   return (
     <div className="flex flex-1 flex-col bg-zinc-50 p-6 dark:bg-black">
