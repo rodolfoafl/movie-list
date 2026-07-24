@@ -198,3 +198,13 @@ reviewer passes spec-conformant code; beyond-spec hardening is human review's jo
   the reviewer, but functionally it voided the entire CHK018 chain. Fixed via
   useActionState surfacing a pt-BR message. Lesson: a requirement isn't
   delivered until the last link renders; mid-chain correctness doesn't count.
+
+  - **Ambiguous destructive-cleanup report (Phase 5 fix verification)**: the
+  agent's browser verification created its own throwaway user, then reported
+  cleaning up "list, entry, and seeded user" — phrasing indistinguishable from
+  having deleted one of the two real pre-registered accounts. Production users
+  verified intact; the issue was report ambiguity over destructive actions on
+  a shared database, not the action itself. Mitigation adopted: standing
+  test-data rule in all phase prompts (agent-created and prefixed data only,
+  never pre-existing rows) — destructive-action reports must name exactly
+  what was deleted.
