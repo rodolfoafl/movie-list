@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { notFound } from "next/navigation";
 
 import { verifySession } from "@/app/lib/dal";
@@ -46,17 +46,29 @@ export default async function ListDetailPage({
     notFound();
   }
 
-  const entries = await db
+  const existingEntries = await db
+    .select({ tmdbId: movieEntries.tmdbId })
+    .from(movieEntries)
+    .where(eq(movieEntries.listId, listId));
+
+  const hasEntries = existingEntries.length > 0;
+
+  const watchedCondition =
+    filter === "watched"
+      ? isNotNull(movieEntries.watchedAt)
+      : filter === "to-watch"
+        ? isNull(movieEntries.watchedAt)
+        : undefined;
+
+  const visibleEntries = await db
     .select()
     .from(movieEntries)
-    .where(eq(movieEntries.listId, listId))
+    .where(
+      watchedCondition
+        ? and(eq(movieEntries.listId, listId), watchedCondition)
+        : eq(movieEntries.listId, listId)
+    )
     .orderBy(sql`lower(${movieEntries.title})`);
-
-  const visibleEntries = entries.filter((entry) => {
-    if (filter === "watched") return entry.watchedAt !== null;
-    if (filter === "to-watch") return entry.watchedAt === null;
-    return true;
-  });
 
   return (
     <div className="flex flex-1 flex-col bg-zinc-50 p-6 dark:bg-black">
@@ -74,7 +86,7 @@ export default async function ListDetailPage({
 
         <MovieSearch
           listId={list.id}
-          existingTmdbIds={entries.map((entry) => entry.tmdbId)}
+          existingTmdbIds={existingEntries.map((entry) => entry.tmdbId)}
         />
 
         <section aria-labelledby="movies-heading" className="mt-8">
@@ -85,7 +97,7 @@ export default async function ListDetailPage({
             Filmes
           </h2>
 
-          {entries.length > 0 && (
+          {hasEntries && (
             <nav
               aria-label="Filtrar por status de assistido"
               className="mt-4 flex gap-2"
@@ -111,7 +123,7 @@ export default async function ListDetailPage({
             </nav>
           )}
 
-          {entries.length === 0 ? (
+          {!hasEntries ? (
             <p className="mt-4 text-zinc-600 dark:text-zinc-400">
               Esta lista ainda não tem filmes. Busque acima para adicionar o
               primeiro.
