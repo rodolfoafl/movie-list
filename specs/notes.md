@@ -163,3 +163,38 @@ reviewer passes spec-conformant code; beyond-spec hardening is human review's jo
   legacy system's surfaces" as an explicit elicitation step; scope changes
   discovered mid-flight enter through a new spec cycle, never through an
   implementation prompt.
+
+  ## 2026-07-24 — Phase 5 checkpoint: assertion strength, recurring drift, broken chain
+
+- **Weakened assertion caught by human review (T032)**: the FR-020 re-mark test
+  originally asserted `toBeGreaterThanOrEqual` — which would PASS if a buggy
+  implementation *restored* the original watched date, the exact behavior the
+  rule prohibits. Passed by accident today (current schema discards the date on
+  unmark, so there's nothing to restore) but would silently stop protecting
+  after future refactors (e.g. a watched-history feature). Tightened to a
+  strict `toBeGreaterThan` + small sleep (be2b440). Lesson: assertion strength
+  is part of test review, not just coverage — a test can name the right rule
+  and still be unable to fail the behavior it exists to forbid.
+
+- **Process slip**: the assertion fix was applied BEFORE running the phase
+  audit, so we lost the datum of whether the conformance reviewer would have
+  caught the weak assertion on its own (its prompt's test-integrity clause
+  targets exactly this). Operational rule going forward: audit first, fix
+  second — corrections applied pre-audit destroy evidence about what each
+  review layer catches.
+
+- **Recurring drift class (T035)**: watched-status filter implemented in-memory
+  (fetch all + `entries.filter(...)`) where data-model.md specifies a
+  query-time WHERE clause — the same code-vs-artifact deviation class as the
+  T028 sort one phase earlier. The reviewer not only caught it but cited
+  notes.md's own T028 entry as precedent: the log has become an audit
+  instrument. One occurrence is accident; two is a pattern — the agent trends
+  toward solving in JS what artifacts assign to SQL. Fixed at query time.
+
+- **Contract chain broken at the last link (T034)**: `toggleWatched` correctly
+  returns the `already_removed` state built by CHK018 → contract → server
+  action, but the UI wrapper discarded the return value — the concurrent-
+  removal case reached the user as silent nothing. Severity-labeled NOTE by
+  the reviewer, but functionally it voided the entire CHK018 chain. Fixed via
+  useActionState surfacing a pt-BR message. Lesson: a requirement isn't
+  delivered until the last link renders; mid-chain correctness doesn't count.
