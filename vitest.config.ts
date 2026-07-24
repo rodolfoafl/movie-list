@@ -25,6 +25,10 @@ export default defineConfig({
           include: ["tests/integration/**/*.test.ts"],
           env: { DOTENV_CONFIG_PATH: ".env.local" },
           setupFiles: ["dotenv/config", "./tests/integration/setup.ts"],
+          // Integration test files share one real TEST_DATABASE_URL and each
+          // truncates tables in afterEach; running files in parallel lets
+          // one file's truncate wipe another's in-progress rows.
+          fileParallelism: false,
         },
       },
     ],
