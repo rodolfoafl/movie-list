@@ -12,14 +12,29 @@ import { MovieSearch } from "./MovieSearch";
 
 const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w200";
 
+type WatchedFilter = "all" | "to-watch" | "watched";
+
+const FILTERS: { value: WatchedFilter; label: string }[] = [
+  { value: "all", label: "Todos" },
+  { value: "to-watch", label: "A assistir" },
+  { value: "watched", label: "Assistidos" },
+];
+
+function parseFilter(status: string | undefined): WatchedFilter {
+  return status === "to-watch" || status === "watched" ? status : "all";
+}
+
 export default async function ListDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ listId: string }>;
+  searchParams: Promise<{ status?: string }>;
 }) {
   await verifySession();
 
   const { listId } = await params;
+  const filter = parseFilter((await searchParams).status);
 
   const [list] = await db
     .select({ id: lists.id, name: lists.name })
@@ -36,6 +51,12 @@ export default async function ListDetailPage({
     .from(movieEntries)
     .where(eq(movieEntries.listId, listId))
     .orderBy(sql`lower(${movieEntries.title})`);
+
+  const visibleEntries = entries.filter((entry) => {
+    if (filter === "watched") return entry.watchedAt !== null;
+    if (filter === "to-watch") return entry.watchedAt === null;
+    return true;
+  });
 
   return (
     <div className="flex flex-1 flex-col bg-zinc-50 p-6 dark:bg-black">
@@ -64,14 +85,44 @@ export default async function ListDetailPage({
             Filmes
           </h2>
 
+          {entries.length > 0 && (
+            <nav
+              aria-label="Filtrar por status de assistido"
+              className="mt-4 flex gap-2"
+            >
+              {FILTERS.map((option) => (
+                <Link
+                  key={option.value}
+                  href={
+                    option.value === "all"
+                      ? `/${list.id}`
+                      : `/${list.id}?status=${option.value}`
+                  }
+                  aria-current={filter === option.value ? "true" : undefined}
+                  className={`rounded border px-3 py-1.5 text-sm transition-colors ${
+                    filter === option.value
+                      ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
+                      : "border-black/15 text-zinc-700 hover:bg-black/5 dark:border-white/15 dark:text-zinc-300 dark:hover:bg-white/5"
+                  }`}
+                >
+                  {option.label}
+                </Link>
+              ))}
+            </nav>
+          )}
+
           {entries.length === 0 ? (
             <p className="mt-4 text-zinc-600 dark:text-zinc-400">
               Esta lista ainda não tem filmes. Busque acima para adicionar o
               primeiro.
             </p>
+          ) : visibleEntries.length === 0 ? (
+            <p className="mt-4 text-zinc-600 dark:text-zinc-400">
+              Nenhum filme corresponde a este filtro.
+            </p>
           ) : (
             <ul className="mt-4 space-y-2">
-              {entries.map((entry) => (
+              {visibleEntries.map((entry) => (
                 <li
                   key={entry.id}
                   className="flex items-center gap-3 rounded-lg border border-black/10 bg-white p-3 dark:border-white/10 dark:bg-zinc-950"
