@@ -1,7 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+
+import { addMovieToList } from "./actions";
 
 export type TmdbSearchResult = {
   tmdbId: number;
@@ -12,16 +14,43 @@ export type TmdbSearchResult = {
 };
 
 type SearchStatus = "idle" | "loading" | "success" | "error";
+type AddStatus = "pending" | "added" | "duplicate";
 
 const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w200";
 const DEBOUNCE_MS = 400;
 
-export function MovieSearch() {
+export function MovieSearch({
+  listId,
+  existingTmdbIds,
+}: {
+  listId: string;
+  existingTmdbIds: number[];
+}) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<SearchStatus>("idle");
   const [results, setResults] = useState<TmdbSearchResult[]>([]);
   const [retryToken, setRetryToken] = useState(0);
+  const [addStatuses, setAddStatuses] = useState<Record<number, AddStatus>>({});
+  const [, startTransition] = useTransition();
   const abortRef = useRef<AbortController | null>(null);
+  const alreadyInList = new Set(existingTmdbIds);
+
+  function handleAdd(result: TmdbSearchResult) {
+    setAddStatuses((prev) => ({ ...prev, [result.tmdbId]: "pending" }));
+    startTransition(async () => {
+      const outcome = await addMovieToList(listId, {
+        tmdbId: result.tmdbId,
+        title: result.title,
+        posterPath: result.posterPath,
+        releaseYear: result.releaseYear,
+      });
+
+      setAddStatuses((prev) => ({
+        ...prev,
+        [result.tmdbId]: outcome?.error ? "duplicate" : "added",
+      }));
+    });
+  }
 
   useEffect(() => {
     const trimmed = query.trim();
@@ -107,39 +136,59 @@ export function MovieSearch() {
 
       {results.length > 0 && (
         <ul className="mt-4 space-y-2">
-          {results.map((result) => (
-            <li
-              key={result.tmdbId}
-              className="flex items-center gap-3 rounded-lg border border-black/10 bg-white p-3 dark:border-white/10 dark:bg-zinc-950"
-            >
-              <div className="flex h-24 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded bg-zinc-200 dark:bg-zinc-800">
-                {result.posterPath ? (
-                  <Image
-                    src={`${TMDB_POSTER_BASE_URL}${result.posterPath}`}
-                    alt=""
-                    width={64}
-                    height={96}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400">Sem imagem</span>
-                )}
-              </div>
-              <div className="min-w-0">
-                <p className="font-medium text-black dark:text-zinc-50">
-                  {result.title}
-                  {result.releaseYear && (
-                    <span className="ml-1 font-normal text-zinc-500 dark:text-zinc-400">
-                      ({result.releaseYear})
-                    </span>
+          {results.map((result) => {
+            const addStatus = addStatuses[result.tmdbId];
+            const isInList = alreadyInList.has(result.tmdbId) || addStatus === "added" || addStatus === "duplicate";
+            const isPending = addStatus === "pending";
+
+            return (
+              <li
+                key={result.tmdbId}
+                className="flex items-center gap-3 rounded-lg border border-black/10 bg-white p-3 dark:border-white/10 dark:bg-zinc-950"
+              >
+                <div className="flex h-24 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded bg-zinc-200 dark:bg-zinc-800">
+                  {result.posterPath ? (
+                    <Image
+                      src={`${TMDB_POSTER_BASE_URL}${result.posterPath}`}
+                      alt=""
+                      width={64}
+                      height={96}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400">Sem imagem</span>
                   )}
-                </p>
-                <p className="line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">
-                  {result.overview}
-                </p>
-              </div>
-            </li>
-          ))}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-black dark:text-zinc-50">
+                    {result.title}
+                    {result.releaseYear && (
+                      <span className="ml-1 font-normal text-zinc-500 dark:text-zinc-400">
+                        ({result.releaseYear})
+                      </span>
+                    )}
+                  </p>
+                  <p className="line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">
+                    {result.overview}
+                  </p>
+                </div>
+                {isInList ? (
+                  <span className="flex-shrink-0 text-sm text-zinc-500 dark:text-zinc-400">
+                    Já está nesta lista
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={isPending}
+                    onClick={() => handleAdd(result)}
+                    className="flex-shrink-0 rounded border border-black/15 px-3 py-1.5 text-sm text-zinc-700 transition-colors hover:bg-black/5 disabled:opacity-50 dark:border-white/15 dark:text-zinc-300 dark:hover:bg-white/5"
+                  >
+                    {isPending ? "Adicionando..." : "Adicionar"}
+                  </button>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>

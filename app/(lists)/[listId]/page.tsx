@@ -50,7 +50,10 @@ export default async function ListDetailPage({
           {list.name}
         </h1>
 
-        <MovieSearch />
+        <MovieSearch
+          listId={list.id}
+          existingTmdbIds={entries.map((entry) => entry.tmdbId)}
+        />
 
         <section aria-labelledby="movies-heading" className="mt-8">
           <h2
