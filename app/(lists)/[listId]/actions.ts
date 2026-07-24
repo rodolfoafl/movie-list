@@ -55,3 +55,28 @@ export async function addMovieToList(
 
   revalidatePath(`/${listId}`);
 }
+
+export type ToggleWatchedState = { error?: string } | undefined;
+
+export async function toggleWatched(
+  entryId: string
+): Promise<ToggleWatchedState> {
+  await verifySession();
+
+  const [entry] = await db
+    .select({ id: movieEntries.id, listId: movieEntries.listId, watchedAt: movieEntries.watchedAt })
+    .from(movieEntries)
+    .where(eq(movieEntries.id, entryId))
+    .limit(1);
+
+  if (!entry) {
+    return { error: "already_removed" };
+  }
+
+  await db
+    .update(movieEntries)
+    .set({ watchedAt: entry.watchedAt ? null : new Date() })
+    .where(eq(movieEntries.id, entryId));
+
+  revalidatePath(`/${entry.listId}`);
+}
