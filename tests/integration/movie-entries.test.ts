@@ -40,4 +40,30 @@ describe("addMovieToList — duplicate movie-in-list rejection (FR-016)", () => 
       .where(eq(movieEntries.listId, listId));
     expect(rows).toHaveLength(1);
   });
+
+  it("allows the same TMDB id independently in a second list — both persist and toggle independently (FR-017)", async () => {
+    const listA = await createTestList("List A");
+    const listB = await createTestList("List B");
+
+    const addToA = await addMovieToList(listA, MATRIX);
+    const addToB = await addMovieToList(listB, MATRIX);
+
+    expect(addToA).toBeUndefined();
+    expect(addToB).toBeUndefined();
+
+    const rowsA = await db
+      .select()
+      .from(movieEntries)
+      .where(eq(movieEntries.listId, listA));
+    const rowsB = await db
+      .select()
+      .from(movieEntries)
+      .where(eq(movieEntries.listId, listB));
+
+    expect(rowsA).toHaveLength(1);
+    expect(rowsB).toHaveLength(1);
+    expect(rowsA[0].tmdbId).toBe(MATRIX.tmdbId);
+    expect(rowsB[0].tmdbId).toBe(MATRIX.tmdbId);
+    expect(rowsA[0].id).not.toBe(rowsB[0].id);
+  });
 });
