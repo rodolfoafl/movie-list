@@ -80,3 +80,7 @@ export async function toggleWatched(
 
   revalidatePath(`/${entry.listId}`);
 }
+
+export async function toggleWatchedFormAction(entryId: string) {
+  await toggleWatched(entryId);
+}

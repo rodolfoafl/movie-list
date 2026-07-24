@@ -7,6 +7,7 @@ import { verifySession } from "@/app/lib/dal";
 import { db } from "@/app/lib/db/client";
 import { lists, movieEntries } from "@/app/lib/db/schema";
 
+import { toggleWatchedFormAction } from "./actions";
 import { MovieSearch } from "./MovieSearch";
 
 const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w200";
@@ -90,7 +91,7 @@ export default async function ListDetailPage({
                       </span>
                     )}
                   </div>
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <p className="font-medium text-black dark:text-zinc-50">
                       {entry.title}
                     </p>
@@ -99,7 +100,24 @@ export default async function ListDetailPage({
                         {entry.releaseYear}
                       </p>
                     )}
+                    {entry.watchedAt && (
+                      <p className="text-sm text-emerald-700 dark:text-emerald-400">
+                        Assistido em{" "}
+                        {entry.watchedAt.toLocaleDateString("pt-BR")}
+                      </p>
+                    )}
                   </div>
+                  <form
+                    action={toggleWatchedFormAction.bind(null, entry.id)}
+                    className="flex-shrink-0"
+                  >
+                    <button
+                      type="submit"
+                      className="rounded border border-black/15 px-3 py-1.5 text-sm text-zinc-700 transition-colors hover:bg-black/5 dark:border-white/15 dark:text-zinc-300 dark:hover:bg-white/5"
+                    >
+                      {entry.watchedAt ? "Marcar como não assistido" : "Marcar como assistido"}
+                    </button>
+                  </form>
                 </li>
               ))}
             </ul>
