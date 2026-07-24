@@ -29,4 +29,21 @@ describe("createList — duplicate name rejection (FR-005)", () => {
     expect(rows).toHaveLength(1);
     expect(rows[0].name).toBe("Date Night");
   });
+
+  it("resolves two simultaneous creates of the same name safely — exactly one wins (CHK004)", async () => {
+    const [a, b] = await Promise.all([
+      createList(undefined, formDataWithName("Race Night")),
+      createList(undefined, formDataWithName("race night")),
+    ]);
+
+    const results = [a, b];
+    const successes = results.filter((result) => result === undefined);
+    const errors = results.filter((result) => result?.error);
+
+    expect(successes).toHaveLength(1);
+    expect(errors).toHaveLength(1);
+
+    const rows = await db.select().from(lists);
+    expect(rows).toHaveLength(1);
+  });
 });
