@@ -7,6 +7,8 @@ import { verifySession } from "@/app/lib/dal";
 import { db } from "@/app/lib/db/client";
 import { lists, movieEntries } from "@/app/lib/db/schema";
 
+import { MovieSearch } from "./MovieSearch";
+
 const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w200";
 
 export default async function ListDetailPage({
@@ -47,6 +49,8 @@ export default async function ListDetailPage({
         <h1 className="mt-2 text-2xl font-semibold text-black dark:text-zinc-50">
           {list.name}
         </h1>
+
+        <MovieSearch />
 
         <section aria-labelledby="movies-heading" className="mt-8">
           <h2
