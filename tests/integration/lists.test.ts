@@ -7,7 +7,9 @@ vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
 }));
 
-import { createList } from "@/app/(lists)/actions";
+import { eq } from "drizzle-orm";
+
+import { createList, renameList } from "@/app/(lists)/actions";
 import { db } from "@/app/lib/db/client";
 import { lists } from "@/app/lib/db/schema";
 
@@ -15,6 +17,11 @@ function formDataWithName(name: string) {
   const formData = new FormData();
   formData.set("name", name);
   return formData;
+}
+
+async function createTestList(name: string) {
+  const [row] = await db.insert(lists).values({ name }).returning({ id: lists.id });
+  return row.id;
 }
 
 describe("createList — duplicate name rejection (FR-005)", () => {
@@ -45,5 +52,21 @@ describe("createList — duplicate name rejection (FR-005)", () => {
 
     const rows = await db.select().from(lists);
     expect(rows).toHaveLength(1);
+  });
+});
+
+describe("renameList — self-rename exception (FR-005)", () => {
+  it("allows renaming a list to a case/whitespace variant of its own current name", async () => {
+    const listId = await createTestList("zz-test-Book Club");
+
+    const result = await renameList(
+      listId,
+      undefined,
+      formDataWithName(" zz-test-book club ")
+    );
+    expect(result).toBeUndefined();
+
+    const [row] = await db.select().from(lists).where(eq(lists.id, listId));
+    expect(row.name).toBe("zz-test-book club");
   });
 });
