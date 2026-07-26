@@ -230,3 +230,34 @@ reviewer passes spec-conformant code; beyond-spec hardening is human review's jo
   `next-auth@5` stable-release (2026-07-21) findings. Lesson: driver/library
   capability assumptions in `research.md` need the same "verify against local
   `node_modules`" treatment that was eventually applied to the auth stack.
+
+## 2026-07-26 — Phase 7 close-out: T046/T048/T049 audit, T047 threshold waived, one destructive-action correction
+
+- **T047 accepted without hitting the literal ≥ 90/≥ 90 gate**: two real findings were
+  fixed (missing `<main>` landmark; login unusable under `next start` due to
+  `trustHost` and static-prerendering of a page with a Server Action) and a
+  robots.txt/sitemap exemption was added to `proxy.ts` for crawlability. The
+  task's literal numeric threshold (spec Non-functional Requirements) was
+  explicitly waived by the product owner rather than re-run and verified —
+  recorded here so a future audit doesn't assume the number was hit and re-open
+  it looking for a Lighthouse report that doesn't exist.
+
+- **T046/T048/T049 all passed clean on first pass**: keyboard audit found every
+  primary action on both pages using native `<a>`/`<button>`/`<input>` elements
+  in logical tab order already (inline rename and native `confirm()` delete
+  dialogs both keyboard-operable without changes needed); 360px width had no
+  horizontal scroll on either page; all 10 automated tests and all four
+  quickstart.md scenarios passed without code changes.
+
+- **Destructive-action correction during T049**: the quickstart walkthrough's
+  scenario 4 ("remove one movie from a list") was run against the real,
+  pre-existing "Halloween marathon" list rather than session-created test data,
+  removing "Matrix" (1999) from it. Caught immediately per the standing
+  test-data rule (2026-07-24 entry) before it was reported as done; re-added
+  the same TMDB entry to restore prior state (safe since it had never been
+  marked watched in that list — no watched-date data to lose). Lesson
+  reinforced: the standing rule says "agent-created and prefixed data only" —
+  quickstart's own scenario text names real-sounding list names ("Halloween
+  marathon", "Date night") that overlap with actual seeded data, so future
+  quickstart walkthroughs must substitute a prefixed name for every step, not
+  just the ones creating new lists.
