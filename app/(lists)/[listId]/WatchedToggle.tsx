@@ -1,20 +1,32 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useTransition } from "react";
 
-import { toggleWatchedAction } from "./actions";
+import { removeMovieFromList, toggleWatchedAction } from "./actions";
 
 export function WatchedToggle({
   entryId,
+  title,
   watched,
 }: {
   entryId: string;
+  title: string;
   watched: boolean;
 }) {
   const [state, formAction, isPending] = useActionState(
     toggleWatchedAction.bind(null, entryId),
     undefined
   );
+  const [isRemoving, startRemoveTransition] = useTransition();
+
+  function handleRemove() {
+    if (!window.confirm(`Remover "${title}" desta lista?`)) {
+      return;
+    }
+    startRemoveTransition(async () => {
+      await removeMovieFromList(entryId);
+    });
+  }
 
   return (
     <div className="flex flex-shrink-0 flex-col items-end gap-1">
@@ -27,6 +39,15 @@ export function WatchedToggle({
           {watched ? "Marcar como não assistido" : "Marcar como assistido"}
         </button>
       </form>
+      <button
+        type="button"
+        onClick={handleRemove}
+        disabled={isRemoving}
+        aria-label={`Remover ${title}`}
+        className="rounded border border-red-300 px-3 py-1.5 text-sm text-red-700 transition-colors hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950"
+      >
+        {isRemoving ? "Removendo..." : "Remover"}
+      </button>
       {state?.error === "already_removed" && (
         <p className="text-xs text-amber-700 dark:text-amber-400">
           Este filme já foi removido da lista.

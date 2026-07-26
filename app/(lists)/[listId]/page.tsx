@@ -172,6 +172,7 @@ export default async function ListDetailPage({
                   </div>
                   <WatchedToggle
                     entryId={entry.id}
+                    title={entry.title}
                     watched={entry.watchedAt !== null}
                   />
                 </li>
