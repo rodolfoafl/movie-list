@@ -144,18 +144,18 @@ Single Next.js App Router project, per plan.md:
 
 ### Tests for User Story 4 (business rules — research.md §8) ⚠️
 
-- [ ] T036 [P] [US4] Integration test in `tests/integration/lists.test.ts`: renaming a list to a case/whitespace variant of its own current name succeeds — a list never conflicts with itself (FR-005 exception) — depends on T006
-- [ ] T037 [US4] Integration test in `tests/integration/lists.test.ts`: deleting a list removes only that list's `movie_entries`; the same TMDB id's entry in a different list is untouched (FR-008, cascade delete, research.md §8) — same file as T036, sequential; depends on T006
-- [ ] T038 [US4] Integration test in `tests/integration/lists.test.ts`: creating a new list reusing the name of a just-deleted list succeeds (FR-027) — same file as T037, sequential; depends on T006
+- [X] T036 [P] [US4] Integration test in `tests/integration/lists.test.ts`: renaming a list to a case/whitespace variant of its own current name succeeds — a list never conflicts with itself (FR-005 exception) — depends on T006
+- [X] T037 [US4] Integration test in `tests/integration/lists.test.ts`: deleting a list removes only that list's `movie_entries`; the same TMDB id's entry in a different list is untouched (FR-008, cascade delete, research.md §8) — same file as T036, sequential; depends on T006
+- [X] T038 [US4] Integration test in `tests/integration/lists.test.ts`: creating a new list reusing the name of a just-deleted list succeeds (FR-027) — same file as T037, sequential; depends on T006
 
 ### Implementation for User Story 4
 
-- [ ] T039 [P] [US4] Create the `renameList` Server Action in `app/(lists)/actions.ts` per contracts/server-actions.md: same validation as `createList` (non-empty, ≤60 chars, uniqueness) but excludes the list's own current row from the duplicate check (FR-005 exception, FR-006) — depends on T026
-- [ ] T040 [US4] Create the `deleteList` Server Action in `app/(lists)/actions.ts` per contracts/server-actions.md: deletes the list inside a transaction, relying on `ON DELETE CASCADE` for its `movie_entries` (FR-007, FR-008); no-op-safe if already deleted concurrently — depends on T007, T012
-- [ ] T041 [P] [US4] Create the `removeMovieFromList` Server Action in `app/(lists)/[listId]/actions.ts` per contracts/server-actions.md: deletes one movie entry by id (FR-018); no-op-safe if the entry no longer exists (CHK018) — depends on T007, T012
-- [ ] T042 [US4] Add rename UI (inline edit + confirmation) to `app/(lists)/page.tsx`, wired to `renameList` — depends on T016, T039
-- [ ] T043 [US4] Add delete-list confirmation dialog to `app/(lists)/page.tsx`, wired to `deleteList` — depends on T016, T040
-- [ ] T044 [US4] Add remove-movie confirmation dialog to `app/(lists)/[listId]/page.tsx`, wired to `removeMovieFromList` — depends on T028, T041
+- [X] T039 [P] [US4] Create the `renameList` Server Action in `app/(lists)/actions.ts` per contracts/server-actions.md: same validation as `createList` (non-empty, ≤60 chars, uniqueness) but excludes the list's own current row from the duplicate check (FR-005 exception, FR-006) — depends on T026
+- [X] T040 [US4] Create the `deleteList` Server Action in `app/(lists)/actions.ts` per contracts/server-actions.md: deletes the list inside a transaction, relying on `ON DELETE CASCADE` for its `movie_entries` (FR-007, FR-008); no-op-safe if already deleted concurrently — depends on T007, T012
+- [X] T041 [P] [US4] Create the `removeMovieFromList` Server Action in `app/(lists)/[listId]/actions.ts` per contracts/server-actions.md: deletes one movie entry by id (FR-018); no-op-safe if the entry no longer exists (CHK018) — depends on T007, T012
+- [X] T042 [US4] Add rename UI (inline edit + confirmation) to `app/(lists)/page.tsx`, wired to `renameList` — depends on T016, T039
+- [X] T043 [US4] Add delete-list confirmation dialog to `app/(lists)/page.tsx`, wired to `deleteList` — depends on T016, T040
+- [X] T044 [US4] Add remove-movie confirmation dialog to `app/(lists)/[listId]/page.tsx`, wired to `removeMovieFromList` — depends on T028, T041
 
 **Checkpoint**: All four user stories are independently functional.
 
