@@ -113,3 +113,24 @@ describe("deleteList — cascade delete scoping (FR-008)", () => {
     expect(entriesB[0].tmdbId).toBe(603);
   });
 });
+
+describe("createList — deleted-name reuse (FR-027)", () => {
+  it("allows creating a new list reusing the name of a just-deleted list", async () => {
+    const originalId = await createTestList("zz-test-Reused Name");
+
+    await deleteList(originalId);
+
+    const result = await createList(
+      undefined,
+      formDataWithName("zz-test-Reused Name")
+    );
+    expect(result).toBeUndefined();
+
+    const rows = await db
+      .select()
+      .from(lists)
+      .where(eq(lists.name, "zz-test-Reused Name"));
+    expect(rows).toHaveLength(1);
+    expect(rows[0].id).not.toBe(originalId);
+  });
+});
