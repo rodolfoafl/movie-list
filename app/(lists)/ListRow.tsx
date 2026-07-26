@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useRef, useState, useTransition } from "react";
 
-import { renameList } from "./actions";
+import { deleteList, renameList } from "./actions";
 
 export function ListRow({ id, name }: { id: string; name: string }) {
   const [isEditing, setIsEditing] = useState(false);
+  const [isDeleting, startDeleteTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction, pending] = useActionState(
     async (_state: Awaited<ReturnType<typeof renameList>>, formData: FormData) => {
@@ -18,6 +19,15 @@ export function ListRow({ id, name }: { id: string; name: string }) {
     },
     undefined
   );
+
+  function handleDelete() {
+    if (!window.confirm(`Excluir a lista "${name}"? Todos os filmes desta lista serão removidos.`)) {
+      return;
+    }
+    startDeleteTransition(async () => {
+      await deleteList(id);
+    });
+  }
 
   if (isEditing) {
     return (
@@ -79,6 +89,15 @@ export function ListRow({ id, name }: { id: string; name: string }) {
         className="flex-shrink-0 rounded border border-black/15 px-3 py-1.5 text-sm text-zinc-700 transition-colors hover:bg-black/5 dark:border-white/15 dark:text-zinc-300 dark:hover:bg-white/5"
       >
         Renomear
+      </button>
+      <button
+        type="button"
+        onClick={handleDelete}
+        disabled={isDeleting}
+        aria-label={`Excluir ${name}`}
+        className="flex-shrink-0 rounded border border-red-300 px-3 py-1.5 text-sm text-red-700 transition-colors hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950"
+      >
+        {isDeleting ? "Excluindo..." : "Excluir"}
       </button>
     </li>
   );
