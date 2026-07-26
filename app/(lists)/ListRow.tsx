@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Trash2 } from "lucide-react";
 import { useActionState, useRef, useState, useTransition } from "react";
 
 import { deleteList, renameList } from "./actions";
@@ -94,10 +95,11 @@ export function ListRow({ id, name }: { id: string; name: string }) {
         type="button"
         onClick={handleDelete}
         disabled={isDeleting}
-        aria-label={`Excluir ${name}`}
-        className="flex-shrink-0 rounded border border-red-300 px-3 py-1.5 text-sm text-red-700 transition-colors hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950"
+        aria-label={`Excluir lista "${name}"`}
+        title={`Excluir lista "${name}"`}
+        className="flex-shrink-0 rounded border border-red-300 p-1.5 text-red-700 transition-colors hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950"
       >
-        {isDeleting ? "Excluindo..." : "Excluir"}
+        <Trash2 size={16} aria-hidden="true" />
       </button>
     </li>
   );
