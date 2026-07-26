@@ -21,7 +21,7 @@ export async function GET(request: Request) {
 
   try {
     const results = await searchMovies(query);
-    return NextResponse.json({ results });
+    return NextResponse.json({ results: results.slice(0, 10) });
   } catch {
     return NextResponse.json({ error: "search_unavailable" }, { status: 503 });
   }
