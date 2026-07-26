@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { Plus } from "lucide-react";
 import { useEffect, useRef, useState, useTransition } from "react";
 
 import { addMovieToList } from "./actions";
@@ -188,9 +189,11 @@ export function MovieSearch({
                     type="button"
                     disabled={isPending}
                     onClick={() => handleAdd(result)}
-                    className="flex-shrink-0 rounded border border-black/15 px-3 py-1.5 text-sm text-zinc-700 transition-colors hover:bg-black/5 disabled:opacity-50 dark:border-white/15 dark:text-zinc-300 dark:hover:bg-white/5"
+                    aria-label={`Adicionar "${result.title}" à lista`}
+                    title={`Adicionar "${result.title}" à lista`}
+                    className="flex-shrink-0 rounded border border-black/15 p-1.5 text-zinc-700 transition-colors hover:bg-black/5 disabled:opacity-50 dark:border-white/15 dark:text-zinc-300 dark:hover:bg-white/5"
                   >
-                    {isPending ? "Adicionando..." : "Adicionar"}
+                    <Plus size={16} aria-hidden="true" />
                   </button>
                 )}
               </li>
