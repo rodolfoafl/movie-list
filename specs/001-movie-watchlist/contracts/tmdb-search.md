@@ -35,6 +35,7 @@ GET /api/tmdb/search?q=<title>
 - `results` is `[]` (not an error) when TMDB returns no matches (FR-012).
 - Any TMDB result missing a usable movie id is dropped from `results` server-side before this response is built (closes CHK021) — the client never has to handle a malformed entry.
 - `posterPath` is `null` when TMDB has no poster; the client renders a placeholder (spec Edge Cases).
+- `results` is capped at the first 10 of TMDB's first page.
 
 ## Response — 503 Service Unavailable
 

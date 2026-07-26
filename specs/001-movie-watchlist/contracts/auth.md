@@ -11,6 +11,7 @@ Auth.js v5 (`5.0.0-beta.32`), Credentials provider only, **JWT sessions** (resea
 - **On success**: a signed JWT session cookie is set (`HttpOnly`, `Secure`, `SameSite=lax`); no DB row is written for the session; action redirects to the lists overview (`/`) — spec User Story 1, scenario 1
 - **On failure** (`CredentialsSignin` error, i.e. wrong email/password or unknown email): returns `{ error: 'E-mail ou senha inválidos.' }`; the login page stays put and shows the inline error (User Story 1, scenario 2) — the message is intentionally identical for "wrong password" and "unknown email" to avoid leaking which accounts exist
 - No sign-up path exists; the only two valid `email` values are the seeded rows (FR-002)
+- **Timing-uniform failure**: `authorize()` must take a near-identical amount of time whether the email is unknown or the password is wrong — an unknown email still runs `bcrypt.compare()` against a precomputed dummy hash, so response latency itself can't be used to enumerate valid accounts (`app/lib/auth.ts`)
 
 ## `logoutAction()`
 

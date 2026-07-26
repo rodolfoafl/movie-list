@@ -21,6 +21,7 @@ type ActionState = { error?: string } | undefined
 ### `renameList(listId, state, formData)`
 
 - Same validation as `createList`, except the list's own current name (any case/whitespace variant) is excluded from the duplicate check (FR-005 exception)
+- No-op-safe if the target list was deleted concurrently (returns success either way), consistent with `deleteList`'s no-op-safety
 
 ### `deleteList(listId)`
 
