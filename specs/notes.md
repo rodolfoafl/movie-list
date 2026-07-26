@@ -301,3 +301,10 @@ reviewer passes spec-conformant code; beyond-spec hardening is human review's jo
   marathon", "Date night") that overlap with actual seeded data, so future
   quickstart walkthroughs must substitute a prefixed name for every step, not
   just the ones creating new lists.
+
+  - **T047 waiver resolved (post-deploy)**: PageSpeed Insights against the
+  production Vercel URL (neutral Google infrastructure): mobile
+  99/100/100/100, desktop 100/100/100/100 (Perf/A11y/BP/SEO). Spec's ≥ 90
+  requirement definitively exceeded; the local-environment caveat (antivirus
+  interference) is confirmed as the cause of the degraded local numbers.
+  Waiver closed.
