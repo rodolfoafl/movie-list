@@ -149,9 +149,14 @@ export default async function ListDetailPage({
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                        Sem imagem
-                      </span>
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src="/poster-placeholder.svg"
+                        alt=""
+                        width={64}
+                        height={96}
+                        className="h-full w-full object-cover"
+                      />
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
