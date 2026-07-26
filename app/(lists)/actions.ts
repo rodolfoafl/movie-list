@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { sql } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
 
 import { verifySession } from "@/app/lib/dal";
 import { db } from "@/app/lib/db/client";
@@ -52,4 +52,55 @@ export async function createList(
   }
 
   revalidatePath("/");
+}
+
+export async function renameList(
+  listId: string,
+  _state: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  await verifySession();
+
+  const rawName = formData.get("name");
+  const name = typeof rawName === "string" ? rawName.trim() : "";
+
+  if (!name) {
+    return { error: "Informe um nome para a lista." };
+  }
+
+  if (name.length > NAME_MAX_LENGTH) {
+    return {
+      error: `O nome deve ter no máximo ${NAME_MAX_LENGTH} caracteres.`,
+    };
+  }
+
+  const [existing] = await db
+    .select({ id: lists.id })
+    .from(lists)
+    .where(
+      and(
+        sql`lower(trim(${lists.name})) = lower(trim(${name}))`,
+        ne(lists.id, listId)
+      )
+    )
+    .limit(1);
+
+  if (existing) {
+    return { error: DUPLICATE_NAME_ERROR };
+  }
+
+  try {
+    await db
+      .update(lists)
+      .set({ name, updatedAt: new Date() })
+      .where(eq(lists.id, listId));
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      return { error: DUPLICATE_NAME_ERROR };
+    }
+    throw error;
+  }
+
+  revalidatePath("/");
+  revalidatePath(`/${listId}`);
 }
