@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Eye, EyeOff, Trash2 } from "lucide-react";
 import { useActionState, useTransition } from "react";
 
 import { removeMovieFromList, toggleWatchedAction } from "./actions";
@@ -35,9 +35,15 @@ export function WatchedToggle({
         <button
           type="submit"
           disabled={isPending}
-          className="rounded border border-black/15 px-3 py-1.5 text-sm text-zinc-700 transition-colors hover:bg-black/5 disabled:opacity-50 dark:border-white/15 dark:text-zinc-300 dark:hover:bg-white/5"
+          aria-label={watched ? "Marcar como não assistido" : "Marcar como assistido"}
+          title={watched ? "Marcar como não assistido" : "Marcar como assistido"}
+          className="rounded border border-black/15 p-1.5 text-zinc-700 transition-colors hover:bg-black/5 disabled:opacity-50 dark:border-white/15 dark:text-zinc-300 dark:hover:bg-white/5"
         >
-          {watched ? "Marcar como não assistido" : "Marcar como assistido"}
+          {watched ? (
+            <EyeOff size={16} aria-hidden="true" />
+          ) : (
+            <Eye size={16} aria-hidden="true" />
+          )}
         </button>
       </form>
       <button
