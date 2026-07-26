@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { asc } from "drizzle-orm";
 
 import { verifySession } from "@/app/lib/dal";
@@ -7,6 +6,7 @@ import { lists } from "@/app/lib/db/schema";
 import { logoutAction } from "@/app/login/actions";
 
 import { CreateListForm } from "./CreateListForm";
+import { ListRow } from "./ListRow";
 
 export default async function ListsOverviewPage() {
   await verifySession();
@@ -42,14 +42,7 @@ export default async function ListsOverviewPage() {
         ) : (
           <ul className="mt-8 space-y-2">
             {allLists.map((list) => (
-              <li key={list.id}>
-                <Link
-                  href={`/${list.id}`}
-                  className="block rounded-lg border border-black/10 bg-white p-4 text-black transition-colors hover:bg-zinc-50 dark:border-white/10 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:bg-zinc-900"
-                >
-                  {list.name}
-                </Link>
-              </li>
+              <ListRow key={list.id} id={list.id} name={list.name} />
             ))}
           </ul>
         )}
