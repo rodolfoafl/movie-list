@@ -145,7 +145,7 @@ reviewer passes spec-conformant code; beyond-spec hardening is human review's jo
   Lesson: the artifact-diffing reviewer earns its keep on divergences that
   neither builds, tests-as-written, nor visual verification can surface.
 
-  ## 2026-07-24 — Scope gap discovered mid-implementation: legacy feature parity
+## 2026-07-24 — Scope gap discovered mid-implementation: legacy feature parity
 
 - **Standalone search page missed at spec time**: the original 2020 app had a
   global movie-search page (search without entering a list first); the rebuild's
@@ -164,7 +164,7 @@ reviewer passes spec-conformant code; beyond-spec hardening is human review's jo
   discovered mid-flight enter through a new spec cycle, never through an
   implementation prompt.
 
-  ## 2026-07-24 — Phase 5 checkpoint: assertion strength, recurring drift, broken chain
+## 2026-07-24 — Phase 5 checkpoint: assertion strength, recurring drift, broken chain
 
 - **Weakened assertion caught by human review (T032)**: the FR-020 re-mark test
   originally asserted `toBeGreaterThanOrEqual` — which would PASS if a buggy
@@ -199,7 +199,7 @@ reviewer passes spec-conformant code; beyond-spec hardening is human review's jo
   useActionState surfacing a pt-BR message. Lesson: a requirement isn't
   delivered until the last link renders; mid-chain correctness doesn't count.
 
-  - **Ambiguous destructive-cleanup report (Phase 5 fix verification)**: the
+- **Ambiguous destructive-cleanup report (Phase 5 fix verification)**: the
   agent's browser verification created its own throwaway user, then reported
   cleaning up "list, entry, and seeded user" — phrasing indistinguishable from
   having deleted one of the two real pre-registered accounts. Production users
@@ -231,6 +231,40 @@ reviewer passes spec-conformant code; beyond-spec hardening is human review's jo
   capability assumptions in `research.md` need the same "verify against local
   `node_modules`" treatment that was eventually applied to the auth stack.
 
+## 2026-07-25 — Launch-blocking bug invisible to the entire process: login broken in production build
+
+- **What happened**: T047's Lighthouse pass required `next build && next start`
+  — the first time the app ever ran as a production build. Login was
+  completely broken: every sign-in silently returned to /login with no
+  session. Two independent, compounding causes, each sufficient to block all
+  logins: (1) Auth.js rejects http://localhost:3000 as an untrusted host in
+  production unless `trustHost: true` — signIn() failed internally without
+  throwing CredentialsSignin, so the action fell through to redirect with no
+  Set-Cookie (and our own pages.signIn hardening made the failure silent by
+  landing on our login page instead of Auth.js's error page); (2) /login had
+  no dynamic data, was fully static-prerendered, and POSTs to its own Server
+  Action were served from the static cache instead of executing. Fixed
+  together: `trustHost: true` + extracting LoginForm.tsx so page.tsx exports
+  `dynamic = "force-dynamic"`.
+
+- **Process lesson (the big one)**: every prior validation layer — Playwright
+  MCP, human walkthroughs, integration tests, four compliance audits — ran
+  exclusively against `npm run dev`, which applies neither behavior.
+  Dev-only testing is a *class* of blindness no artifact or reviewer covered:
+  the app would have shipped to Vercel with 100% login failure. Standing rule
+  adopted: a production-build smoke test (`build` + `start` + manual login)
+  belongs in every phase checkpoint from Foundational onward, and in any
+  future project's Definition of Done.
+
+- **Diagnosis lesson (a twist on 2026-07-24's)**: yesterday's entry warned
+  that plausible-sophisticated diagnoses can mask mundane config causes. Here
+  the agent's sophisticated diagnosis (static-cache swallowing the POST) and
+  the mundane one (trustHost) were BOTH real and compounding — fixing either
+  alone would have left login broken and the investigation looking "wrong".
+  The method survives the twist: demand evidence per hypothesis and fix each
+  confirmed cause separately; don't stop at the first confirmed cause when
+  symptoms allow multiple.
+
 ## 2026-07-26 — Phase 7 close-out: T046/T048/T049 audit, T047 threshold waived, one destructive-action correction
 
 - **T047 accepted without hitting the literal ≥ 90/≥ 90 gate**: two real findings were
@@ -240,7 +274,11 @@ reviewer passes spec-conformant code; beyond-spec hardening is human review's jo
   task's literal numeric threshold (spec Non-functional Requirements) was
   explicitly waived by the product owner rather than re-run and verified —
   recorded here so a future audit doesn't assume the number was hit and re-open
-  it looking for a Lighthouse report that doesn't exist.
+  it looking for a Lighthouse report that doesn't exist. Local numbers were
+  degraded by environment interference (antivirus); definitive validation is
+  deferred to a post-deploy PageSpeed Insights run against the production
+  Vercel URL — if ≥ 90 there, the local-environment caveat dissolves; if not,
+  it's a real signal to act on.
 
 - **T046/T048/T049 all passed clean on first pass**: keyboard audit found every
   primary action on both pages using native `<a>`/`<button>`/`<input>` elements
@@ -255,7 +293,9 @@ reviewer passes spec-conformant code; beyond-spec hardening is human review's jo
   removing "Matrix" (1999) from it. Caught immediately per the standing
   test-data rule (2026-07-24 entry) before it was reported as done; re-added
   the same TMDB entry to restore prior state (safe since it had never been
-  marked watched in that list — no watched-date data to lose). Lesson
+  marked watched in that list — no watched-date data to lose; the re-added
+  entry does carry a new id/created_at, acceptable since ordering is
+  alphabetical, not by date added). Lesson
   reinforced: the standing rule says "agent-created and prefixed data only" —
   quickstart's own scenario text names real-sounding list names ("Halloween
   marathon", "Date night") that overlap with actual seeded data, so future
