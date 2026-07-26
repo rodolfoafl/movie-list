@@ -56,6 +56,19 @@ export async function addMovieToList(
   revalidatePath(`/${listId}`);
 }
 
+export async function removeMovieFromList(entryId: string): Promise<void> {
+  await verifySession();
+
+  const [entry] = await db
+    .delete(movieEntries)
+    .where(eq(movieEntries.id, entryId))
+    .returning({ listId: movieEntries.listId });
+
+  if (entry) {
+    revalidatePath(`/${entry.listId}`);
+  }
+}
+
 export type ToggleWatchedState = { error?: string } | undefined;
 
 export async function toggleWatched(
