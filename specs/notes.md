@@ -208,3 +208,25 @@ reviewer passes spec-conformant code; beyond-spec hardening is human review's jo
   test-data rule in all phase prompts (agent-created and prefixed data only,
   never pre-existing rows) — destructive-action reports must name exactly
   what was deleted.
+
+## 2026-07-25 — Phase 6 audit: transaction claim vs. installed driver
+
+- **Planned mechanism never matched the installed driver (`deleteList`)**:
+  `research.md` §7 (CHK017), `data-model.md`, and `tasks.md` (T040) all specify
+  that `deleteList` runs "in a transaction". The actual driver is
+  `drizzle-orm/neon-http` (`app/lib/db/client.ts`) — the Neon HTTP driver, which
+  issues one HTTP request per call and does not support interactive
+  multi-statement transactions (`db.transaction()` is unavailable in this mode).
+  Never caught at plan time. Harmless here because `deleteList` is a single
+  `DELETE FROM lists WHERE id = $1`, already atomic in Postgres on its own, and
+  `ON DELETE CASCADE` removes the dependent `movie_entries` rows as part of that
+  same statement — no explicit transaction wrapper was ever needed. The
+  implementation (`app/(lists)/actions.ts:108-116`) already reflects this via
+  code comment, without the discrepancy against the artifacts ever being logged.
+  A hypothetical multi-statement mutation (e.g. writing to two tables that
+  aren't linked by cascade) would have hit this driver limitation for real at
+  implementation time. Third instance of installed-reality diverging from a
+  planned mechanism, after the Auth.js database-sessions (2026-07-21) and
+  `next-auth@5` stable-release (2026-07-21) findings. Lesson: driver/library
+  capability assumptions in `research.md` need the same "verify against local
+  `node_modules`" treatment that was eventually applied to the auth stack.
