@@ -14,7 +14,7 @@ A private, shared movie watchlist for exactly two pre-registered users: create n
 
 **Language/Version**: TypeScript 5.x on Node.js 20.9+ (Next.js 16 minimum requirement)
 
-**Primary Dependencies**: Next.js 16.2.11 (App Router, Turbopack default), React 19.2, Tailwind CSS v4, Drizzle ORM + drizzle-kit, `@neondatabase/serverless`, `next-auth@beta` (Auth.js v5, `5.0.0-beta.32` — no stable `5.x` exists on npm, see research.md §4), `bcryptjs` — **no `@auth/drizzle-adapter`**: verified unused, since Credentials-provider sign-in with JWT sessions never calls adapter methods (research.md §4)
+**Primary Dependencies**: Next.js 16.2.11 (App Router, Turbopack default), React 19.2, Tailwind CSS v4, Drizzle ORM + drizzle-kit, `@neondatabase/serverless`, `next-auth@beta` (Auth.js v5, `5.0.0-beta.32` — no stable `5.x` exists on npm, see research.md §4), `bcryptjs`, `lucide-react` (icon-only buttons) — **no `@auth/drizzle-adapter`**: verified unused, since Credentials-provider sign-in with JWT sessions never calls adapter methods (research.md §4)
 
 **Storage**: Neon Postgres (serverless HTTP driver) — 3 tables (`users`, `lists`, `movie_entries`); no `sessions` table (sessions are JWT-based, not database-based — research.md §4); see [data-model.md](./data-model.md)
 

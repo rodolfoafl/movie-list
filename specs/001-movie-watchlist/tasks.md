@@ -171,6 +171,19 @@ Single Next.js App Router project, per plan.md:
 - [ ] T048 Verify usability at 360px width with no horizontal scroll on both the lists overview and list detail page (SC-004)
 - [ ] T049 Run the full quickstart.md validation walkthrough end-to-end (all four numbered scenarios) and fix any gaps found
 
+### UI refinements
+
+- [ ] T050 [P] Global button cursor fix in `app/globals.css`: add `button:not(:disabled) { cursor: pointer; }` — Tailwind v4 preflight no longer sets a pointer cursor on buttons
+- [ ] T051 Install `lucide-react` (`npm install lucide-react`) — blocks T052–T055
+- [ ] T052 [P] [US4] Replace the delete-list text button with a `Trash2` icon in `app/(lists)/page.tsx`; icon-only button carries a pt-BR `aria-label` and matching `title` (e.g. "Excluir lista") — depends on T051
+- [ ] T053 [US4] Replace the remove-movie text button with a `Trash2` icon in `app/(lists)/[listId]/page.tsx`; icon-only button carries a pt-BR `aria-label` and matching `title` (e.g. "Remover filme") — depends on T051
+- [ ] T054 [US3] Replace the watched-toggle text button with `Eye`/`EyeOff` icons (per current state) in `app/(lists)/[listId]/page.tsx`; icon-only button carries a pt-BR `aria-label` and matching `title` reflecting the action (e.g. "Marcar como assistido" / "Marcar como não assistido") — same file as T053, sequential; depends on T051
+- [ ] T055 [US2] Replace the add-movie text button with a `Plus` icon in `app/(lists)/[listId]/page.tsx`; icon-only button carries a pt-BR `aria-label` and matching `title` (e.g. "Adicionar à lista") — same file as T053/T054, sequential; depends on T051
+- [ ] T056 [US3][US4] Change the watched-toggle + remove-movie button container in `app/(lists)/[listId]/page.tsx` from column to row layout (`flex-row`), placing the two controls side by side — same file as T053–T055, sequential; depends on T053, T054
+- [ ] T057 [US2] Cap TMDB search results at 10 in `app/api/tmdb/search/route.ts`: slice the mapped results to the first 10 server-side before building the response, per contracts/tmdb-search.md — depends on T025
+
+**Checkpoint**: Buttons show a pointer cursor, primary actions use `lucide-react` icons with accessible pt-BR labels, the watched-toggle/remove-movie controls sit side by side, and TMDB search never renders more than 10 results.
+
 ---
 
 ## Dependencies & Execution Order
