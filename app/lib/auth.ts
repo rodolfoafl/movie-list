@@ -13,6 +13,7 @@ const DUMMY_HASH =
   "$2b$10$fLXQkt1ykbqNhPwqORgkKOiO1mHHYgpHAiH5qqeH2f8cNOWtWdnyq";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  trustHost: true,
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",
