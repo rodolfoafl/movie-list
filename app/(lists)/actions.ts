@@ -104,3 +104,13 @@ export async function renameList(
   revalidatePath("/");
   revalidatePath(`/${listId}`);
 }
+
+export async function deleteList(listId: string): Promise<void> {
+  await verifySession();
+
+  // A single DELETE is already atomic in Postgres — ON DELETE CASCADE
+  // removes this list's movie_entries within the same implicit transaction.
+  await db.delete(lists).where(eq(lists.id, listId));
+
+  revalidatePath("/");
+}
