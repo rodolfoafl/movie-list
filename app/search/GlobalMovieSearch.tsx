@@ -3,11 +3,13 @@
 import { useState } from "react";
 
 import { MovieResultCard } from "@/app/components/MovieResultCard";
-import { useTmdbSearch } from "@/app/components/useTmdbSearch";
+import { useTmdbSearch, type TmdbSearchResult } from "@/app/components/useTmdbSearch";
+import { AddToListModal } from "./AddToListModal";
 
 export function GlobalMovieSearch() {
   const [query, setQuery] = useState("");
   const { status, results, retry, reset } = useTmdbSearch(query);
+  const [selectedResult, setSelectedResult] = useState<TmdbSearchResult | null>(null);
 
   return (
     <section aria-labelledby="global-search-heading">
@@ -59,6 +61,7 @@ export function GlobalMovieSearch() {
                   type="button"
                   aria-label={`Adicionar "${result.title}" à lista`}
                   title={`Adicionar "${result.title}" à lista`}
+                  onClick={() => setSelectedResult(result)}
                   className="flex-shrink-0 rounded border border-black/15 px-3 py-1.5 text-sm text-zinc-700 transition-colors hover:bg-black/5 dark:border-white/15 dark:text-zinc-300 dark:hover:bg-white/5"
                 >
                   Adicionar à lista
@@ -67,6 +70,19 @@ export function GlobalMovieSearch() {
             />
           ))}
         </ul>
+      )}
+
+      {selectedResult && (
+        <AddToListModal
+          key={selectedResult.tmdbId}
+          movie={{
+            tmdbId: selectedResult.tmdbId,
+            title: selectedResult.title,
+            posterPath: selectedResult.posterPath,
+            releaseYear: selectedResult.releaseYear,
+          }}
+          onClose={() => setSelectedResult(null)}
+        />
       )}
     </section>
   );
