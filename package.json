@@ -9,7 +9,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "seed:users": "tsx scripts/seed-users.ts",
-    "dev:test": "DATABASE_URL=$TEST_DATABASE_URL next dev"
+    "dev:test": "node scripts/dev-test.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
