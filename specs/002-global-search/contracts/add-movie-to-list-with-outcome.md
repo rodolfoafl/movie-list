@@ -12,7 +12,7 @@ export async function addMovieToListWithOutcome(
 ): Promise<{ status: "success" | "failure"; reason?: string }>
 ```
 
-This function never throws under expected conditions — every branch below returns a value, so `Promise.allSettled` around N calls is defensive (guards against a truly unexpected exception in one call) rather than load-bearing for the expected error paths.
+This function never converts *every* thrown error into a failure outcome: it returns a value for every expected error path below, but a session-expiry redirect thrown by `addMovieToList`'s own nested `verifySession()` call (step 3) is deliberately rethrown rather than classified as `{ status: "failure" }`, and propagates unchanged through `confirmAddToLists`'s `Promise.allSettled` fan-out instead of being reported as a per-list failure (see [[research]] §8).
 
 ## Behavior (in order)
 
@@ -22,7 +22,8 @@ This function never throws under expected conditions — every branch below retu
 3. List exists → call the existing `addMovieToList(listId, movie)` from `app/(lists)/[listId]/actions.ts:20`, **unmodified**, wrapped in try/catch:
    - Returns `undefined` (inserted) → `{ status: "success" }`.
    - Returns `{ error: "already_in_list" }` → `{ status: "success" }` (FR-022 — desired end state already holds, regardless of whether the pre-existing row came from this feature's own concurrent add or the in-list search).
-   - Throws (any other DB error) → caught here, `{ status: "failure", reason: "Não foi possível adicionar, tente novamente." }` (FR-023).
+   - Throws a redirect error (from `addMovieToList`'s nested `verifySession()`, on session expiry) → rethrown via `unstable_rethrow`, not classified as a failure (see [[research]] §8).
+   - Throws any other error (a DB error) → caught here, `{ status: "failure", reason: "Não foi possível adicionar, tente novamente." }` (FR-023).
 
 ## Caller contract
 
