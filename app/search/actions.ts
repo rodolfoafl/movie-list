@@ -66,3 +66,24 @@ export async function addMovieToListWithOutcome(
     return { status: "failure", reason: GENERIC_FAILURE_REASON };
   }
 }
+
+export type ConfirmAddOutcome = AddMovieOutcome & { listId: string };
+
+export async function confirmAddToLists(
+  listIds: string[],
+  movie: MovieSnapshot
+): Promise<ConfirmAddOutcome[]> {
+  await verifySession();
+
+  const settled = await Promise.allSettled(
+    listIds.map((listId) => addMovieToListWithOutcome(listId, movie))
+  );
+
+  return settled.map((result, index) => {
+    const listId = listIds[index];
+    if (result.status === "fulfilled") {
+      return { listId, ...result.value };
+    }
+    return { listId, status: "failure", reason: GENERIC_FAILURE_REASON };
+  });
+}
