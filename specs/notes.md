@@ -308,3 +308,49 @@ reviewer passes spec-conformant code; beyond-spec hardening is human review's jo
   requirement definitively exceeded; the local-environment caveat (antivirus
   interference) is confirmed as the cause of the degraded local numbers.
   Waiver closed.
+
+  ## 2026-07-27 — Legacy data migration: dev dry-run, then production
+
+- **Migration cycle scope**: one-shot backfill script (`scripts/migrate-legacy.ts`)
+  per `specs/migration-legacy-data/spec-lite.md`, importing 22 lists and 584
+  movie entries from the 2020 app's MongoDB export. Re-resolves each legacy
+  OMDB `imdbID` to a TMDB id via `/find`, discarding the old OMDB snapshot
+  (title/year/poster) in favor of a fresh TMDB one, per the rebuild's schema.
+
+- **Dry run against a Neon dev branch (before touching production)**: 22/22
+  lists created, 582/584 entries inserted automatically, 0 TMDB API errors,
+  2 orphans — exactly as designed. Verified visually by pointing the local
+  app at the dev branch before running against production. Second project
+  instance of "validate on a disposable environment before the real one"
+  paying off (first was the Phase-7 production-build bug).
+
+- **Orphan #1 — "Le Dernier Combat" (1983)**: source data never had an
+  `imdbID` (empty string). Known and predicted from the source-data sampling
+  before the script was written — not a surprise.
+
+- **Orphan #2 — "No Time to Die" (2020/2021), a real surprise**: the legacy
+  `imdbID` (`tt11917048`) resolved on TMDB's `/find` to zero results, which
+  could easily have been dismissed as "TMDB doesn't have it." Checked instead
+  of assumed: that IMDb id actually belongs to a *Land Rover Defender
+  promotional commercial* that tie-in-marketed the film under the same name
+  — not the movie itself (the film's real id is `tt2382320`). Almost
+  certainly an OMDB search mismatch from 2020, when the film's release was
+  repeatedly delayed by the pandemic and may not have had a stable id yet in
+  the source app's original lookup. Lesson: an orphan's "reason" string is a
+  hypothesis, not a verdict — worth a quick check before writing it off as
+  routine, especially when a single-digit orphan count makes checking cheap.
+
+- **Second branch-discipline lapse**: work for this migration was committed
+  directly on `main` again before being caught and moved to a proper
+  `migration-legacy-data` branch (first occurrence was Phase 1 of the main
+  feature). Since it recurred despite being a *known, named* failure mode,
+  the mitigation is upgraded from "remember to check" to a standing personal
+  habit: run `git branch --show-current` as the very first action of any new
+  work session, before the first commit — not only when asked.
+
+- **Production run**: `npm run migrate:legacy -- --database-url <prod>` —
+  22/22 lists created, 582/584 entries inserted, 0 API errors, same 2
+  orphans as the dev dry-run (Le Dernier Combat, No Time to Die) — numbers
+  matched the dev run exactly, confirming the script's determinism. Both
+  orphans added manually via the app's normal search after the run, into
+  their correct original lists (Saga 007; Sci-Fi).

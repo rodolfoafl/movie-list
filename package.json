@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "seed:users": "tsx scripts/seed-users.ts"
+    "seed:users": "tsx scripts/seed-users.ts",
+    "migrate:legacy": "tsx scripts/migrate-legacy.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
