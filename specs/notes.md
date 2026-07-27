@@ -338,3 +338,34 @@ reviewer passes spec-conformant code; beyond-spec hardening is human review's jo
   Replaced with a small Node wrapper (`scripts/dev-test.mjs`) that reads
   `.env.local` itself before spawning `next dev`, removing the dependency
   on shell state entirely.
+
+## 2026-07-27 — Phase 4 checkpoint: artifact hierarchy holds, and a self-check on my own fallibility
+
+- **Artifact hierarchy resolved a real deviation correctly**: T015's literal
+  wording implies an `isOpen`-prop-toggle component that stays mounted, but
+  the actual implementation mounts a fresh `AddToListModal` instance per
+  open (a real `react-hooks/set-state-in-effect` lint error forced the
+  change away from the literal toggle design). The compliance reviewer
+  resolved the apparent deviation by citing `data-model.md`'s explicit
+  lifecycle text ("a fresh instance is created each time the modal
+  reopens") as higher-priority than `tasks.md`'s implicit wording — the same
+  precedence this project has applied manually throughout (plan is a map,
+  contracts/data-model are the law) now held up inside the reviewer itself,
+  with no human intervention needed to adjudicate it. The reviewer went
+  further than citing the doc: it traced the `useEffect`'s dependency down
+  to the primitive `movie.tmdbId` (not the object reference) to rule out
+  double-fetch on parent re-render, and separately noted the native
+  `<dialog>`'s `showModal()` blocks interaction with the rest of the page
+  while open — two independent proofs against two different risk vectors,
+  not just "this looks fine."
+
+- **The auditor is not exempt from the fallibility it audits**: the phase-
+  review prompt mislabeled this work as belonging to `001-movie-watchlist`
+  (a copy-paste slip while writing the prompt). The reviewer detected the
+  mismatch between the instruction and the actual commits/files touched,
+  and self-corrected to audit against `002-global-search`'s artifacts
+  instead of following the wrong label blindly. Good behavior from the
+  reviewer, but also a personal lesson: the human writing checkpoint
+  prompts is exactly as capable of a careless slip as the agent writing
+  code — worth a quick sanity glance at a prompt's own content before
+  dispatching it, not only scrutiny of what comes back.
