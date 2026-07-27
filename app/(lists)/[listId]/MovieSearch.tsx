@@ -1,24 +1,13 @@
 "use client";
 
-import Image from "next/image";
 import { Plus } from "lucide-react";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 
+import { MovieResultCard } from "@/app/components/MovieResultCard";
+import { useTmdbSearch, type TmdbSearchResult } from "@/app/components/useTmdbSearch";
 import { addMovieToList } from "./actions";
 
-export type TmdbSearchResult = {
-  tmdbId: number;
-  title: string;
-  releaseYear: number | null;
-  posterPath: string | null;
-  overview: string;
-};
-
-type SearchStatus = "idle" | "loading" | "success" | "error";
 type AddStatus = "pending" | "added" | "duplicate";
-
-const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w200";
-const DEBOUNCE_MS = 400;
 
 export function MovieSearch({
   listId,
@@ -28,12 +17,9 @@ export function MovieSearch({
   existingTmdbIds: number[];
 }) {
   const [query, setQuery] = useState("");
-  const [status, setStatus] = useState<SearchStatus>("idle");
-  const [results, setResults] = useState<TmdbSearchResult[]>([]);
-  const [retryToken, setRetryToken] = useState(0);
+  const { status, results, retry, reset } = useTmdbSearch(query);
   const [addStatuses, setAddStatuses] = useState<Record<number, AddStatus>>({});
   const [, startTransition] = useTransition();
-  const abortRef = useRef<AbortController | null>(null);
   const alreadyInList = new Set(existingTmdbIds);
 
   function handleAdd(result: TmdbSearchResult) {
@@ -53,43 +39,6 @@ export function MovieSearch({
     });
   }
 
-  useEffect(() => {
-    const trimmed = query.trim();
-
-    if (!trimmed) {
-      abortRef.current?.abort();
-      return;
-    }
-
-    const timeoutId = setTimeout(() => {
-      abortRef.current?.abort();
-      const controller = new AbortController();
-      abortRef.current = controller;
-      setStatus("loading");
-
-      fetch(`/api/tmdb/search?q=${encodeURIComponent(trimmed)}`, {
-        signal: controller.signal,
-      })
-        .then(async (response) => {
-          if (!response.ok) {
-            setStatus("error");
-            return;
-          }
-          const data = (await response.json()) as { results: TmdbSearchResult[] };
-          setResults(data.results);
-          setStatus("success");
-        })
-        .catch((error: unknown) => {
-          if (error instanceof DOMException && error.name === "AbortError") {
-            return;
-          }
-          setStatus("error");
-        });
-    }, DEBOUNCE_MS);
-
-    return () => clearTimeout(timeoutId);
-  }, [query, retryToken]);
-
   return (
     <section aria-labelledby="search-heading" className="mt-8">
       <h2 id="search-heading" className="text-lg font-medium text-black dark:text-zinc-50">
@@ -107,9 +56,7 @@ export function MovieSearch({
           const value = event.target.value;
           setQuery(value);
           if (!value.trim()) {
-            abortRef.current?.abort();
-            setStatus("idle");
-            setResults([]);
+            reset();
           }
         }}
         placeholder="Buscar por título..."
@@ -121,7 +68,7 @@ export function MovieSearch({
           <p>Não foi possível buscar filmes agora. Tente novamente.</p>
           <button
             type="button"
-            onClick={() => setRetryToken((token) => token + 1)}
+            onClick={retry}
             className="mt-2 rounded border border-amber-400 px-3 py-1 text-sm hover:bg-amber-100 dark:hover:bg-amber-900"
           >
             Tentar novamente
@@ -143,60 +90,28 @@ export function MovieSearch({
             const isPending = addStatus === "pending";
 
             return (
-              <li
+              <MovieResultCard
                 key={result.tmdbId}
-                className="flex items-center gap-3 rounded-lg border border-black/10 bg-white p-3 dark:border-white/10 dark:bg-zinc-950"
-              >
-                <div className="flex h-24 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded bg-zinc-200 dark:bg-zinc-800">
-                  {result.posterPath ? (
-                    <Image
-                      src={`${TMDB_POSTER_BASE_URL}${result.posterPath}`}
-                      alt=""
-                      width={64}
-                      height={96}
-                      className="h-full w-full object-cover"
-                    />
+                result={result}
+                renderAction={() =>
+                  isInList ? (
+                    <span className="flex-shrink-0 text-sm text-zinc-500 dark:text-zinc-400">
+                      Já está nesta lista
+                    </span>
                   ) : (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src="/poster-placeholder.svg"
-                      alt=""
-                      width={64}
-                      height={96}
-                      className="h-full w-full object-cover"
-                    />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium text-black dark:text-zinc-50">
-                    {result.title}
-                    {result.releaseYear && (
-                      <span className="ml-1 font-normal text-zinc-500 dark:text-zinc-400">
-                        ({result.releaseYear})
-                      </span>
-                    )}
-                  </p>
-                  <p className="line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">
-                    {result.overview}
-                  </p>
-                </div>
-                {isInList ? (
-                  <span className="flex-shrink-0 text-sm text-zinc-500 dark:text-zinc-400">
-                    Já está nesta lista
-                  </span>
-                ) : (
-                  <button
-                    type="button"
-                    disabled={isPending}
-                    onClick={() => handleAdd(result)}
-                    aria-label={`Adicionar "${result.title}" à lista`}
-                    title={`Adicionar "${result.title}" à lista`}
-                    className="flex-shrink-0 rounded border border-black/15 p-1.5 text-zinc-700 transition-colors hover:bg-black/5 disabled:opacity-50 dark:border-white/15 dark:text-zinc-300 dark:hover:bg-white/5"
-                  >
-                    <Plus size={16} aria-hidden="true" />
-                  </button>
-                )}
-              </li>
+                    <button
+                      type="button"
+                      disabled={isPending}
+                      onClick={() => handleAdd(result)}
+                      aria-label={`Adicionar "${result.title}" à lista`}
+                      title={`Adicionar "${result.title}" à lista`}
+                      className="flex-shrink-0 rounded border border-black/15 p-1.5 text-zinc-700 transition-colors hover:bg-black/5 disabled:opacity-50 dark:border-white/15 dark:text-zinc-300 dark:hover:bg-white/5"
+                    >
+                      <Plus size={16} aria-hidden="true" />
+                    </button>
+                  )
+                }
+              />
             );
           })}
         </ul>
