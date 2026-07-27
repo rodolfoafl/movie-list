@@ -1,6 +1,7 @@
 "use server";
 
 import { asc, eq } from "drizzle-orm";
+import { unstable_rethrow } from "next/navigation";
 
 import { addMovieToList, type MovieSnapshot } from "@/app/(lists)/[listId]/actions";
 import { verifySession } from "@/app/lib/dal";
@@ -62,7 +63,8 @@ export async function addMovieToListWithOutcome(
   try {
     await addMovieToList(listId, movie);
     return { status: "success" };
-  } catch {
+  } catch (error) {
+    unstable_rethrow(error);
     return { status: "failure", reason: GENERIC_FAILURE_REASON };
   }
 }
@@ -84,6 +86,7 @@ export async function confirmAddToLists(
     if (result.status === "fulfilled") {
       return { listId, ...result.value };
     }
+    unstable_rethrow(result.reason);
     return { listId, status: "failure", reason: GENERIC_FAILURE_REASON };
   });
 }
