@@ -84,7 +84,7 @@ export function AddToListModal({
       ref={dialogRef}
       onClose={onClose}
       aria-labelledby="add-to-list-heading"
-      className="rounded-lg border border-black/10 bg-white p-6 text-black backdrop:bg-black/50 dark:border-white/10 dark:bg-zinc-950 dark:text-zinc-50"
+      className="m-auto w-[90vw] max-w-md min-h-[200px] rounded-lg border border-black/10 bg-white p-6 text-black backdrop:bg-black/50 dark:border-white/10 dark:bg-zinc-950 dark:text-zinc-50"
     >
       <h2 id="add-to-list-heading" className="text-lg font-semibold">
         Adicionar à lista
