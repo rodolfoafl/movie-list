@@ -330,3 +330,11 @@ reviewer passes spec-conformant code; beyond-spec hardening is human review's jo
   visual QA has a default command that cannot reach production data by
   accident — converting an advisory rule into a structural one, same
   pattern as the Playwright artifact containment fix.
+
+- **Follow-up fix**: the initial `dev:test` script silently required
+  `TEST_DATABASE_URL` pre-exported at the shell level (shell variable
+  expansion happens before Next.js's own .env.local loading) — a script
+  meant to be a structural safety net had its own invisible precondition.
+  Replaced with a small Node wrapper (`scripts/dev-test.mjs`) that reads
+  `.env.local` itself before spawning `next dev`, removing the dependency
+  on shell state entirely.
