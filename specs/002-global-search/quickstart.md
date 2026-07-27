@@ -62,6 +62,14 @@ Prerequisite: a workspace with zero lists (fresh DB, or delete all lists via `/`
 1. Resize the browser (or use device emulation) to 360px width; repeat Scenarios 1–2 and confirm no horizontal scrolling and all actions remain reachable.
 2. Using only the keyboard (Tab/Shift+Tab/Enter/Space/Escape), complete Scenario 2 end-to-end: focus the search input, reach a result's "add to list" action, move focus into the modal, toggle checkboxes, confirm, and close — without a mouse.
 
+## Scenario 8 — Modal snapshot-fetch failure (FR-019's carve-out, data-model.md's `open/error` state)
+
+1. Search for a movie, click its "Adicionar à lista" action.
+2. Simulate a failure of the `getListsForMovie` snapshot fetch (e.g., temporarily break the DB connection string in `.env.local` and restart the dev server, or throw inside `getListsForMovie` locally), then trigger "Adicionar à lista" again.
+3. Confirm the modal shows a retry-capable error state instead of an empty or broken checkbox list, and the page does not crash.
+4. Click retry; confirm the same `getListsForMovie` call re-runs (this is safe and expected — no snapshot was ever established yet, so this is not a violation of FR-019, which only forbids re-fetching an *already-established* snapshot).
+5. Restore the DB connection and confirm the modal now loads the checkbox list normally.
+
 ## Automated checks
 
 ```bash

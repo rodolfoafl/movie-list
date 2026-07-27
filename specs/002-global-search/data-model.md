@@ -34,12 +34,22 @@ Computed as: all rows from `lists` (ordered by name, matching `app/(lists)/page.
 
 Returned per checked-and-enabled list by the new `addMovieToListWithOutcome(listId, movie)` Server Action; the modal assembles an array of these (one per list it attempted) after `Promise.allSettled` resolves, to render FR-012/FR-023's per-list report.
 
+**Wire shape** — this is the actual return value of `confirmAddToLists` (see [[contracts/confirm-add-to-lists]]), and does **not** include `listName`:
+
 | Field | Type | Meaning |
 |---|---|---|
 | `listId` | `string` (uuid) | Which list this outcome is for |
-| `listName` | `string` | Carried from the List Selection Snapshot for display (not re-fetched) |
 | `status` | `"success" \| "failure"` | Outcome per [[research]] §1's classification rules |
 | `reason` | `string \| undefined` | Present only when `status === "failure"`; one of `"Lista não existe mais."` (FR-021) or `"Não foi possível adicionar, tente novamente."` (FR-023) |
+
+**Displayed shape** — what `AddToListModal` renders for FR-012/FR-023's per-list report, after the modal joins each wire-shape outcome with the list name it already holds in its own List Selection Snapshot (keyed by `listId`, not re-fetched):
+
+| Field | Type | Meaning |
+|---|---|---|
+| `listId` | `string` (uuid) | Which list this outcome is for |
+| `listName` | `string` | Joined client-side from the List Selection Snapshot for display — never part of `confirmAddToLists`'s return value itself |
+| `status` | `"success" \| "failure"` | Outcome per [[research]] §1's classification rules |
+| `reason` | `string \| undefined` | Present only when `status === "failure"` |
 
 **Not modeled as a stored entity** — this is a transport shape for a single confirmation's UI report; nothing about a confirmation attempt is persisted beyond the `movie_entries` rows that `addMovieToList` itself inserts.
 
