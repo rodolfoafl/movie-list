@@ -308,3 +308,25 @@ reviewer passes spec-conformant code; beyond-spec hardening is human review's jo
   requirement definitively exceeded; the local-environment caveat (antivirus
   interference) is confirmed as the cause of the degraded local numbers.
   Waiver closed.
+
+## 2026-07-27 — Standing test-data rule violated: dev server ran against real DATABASE_URL, briefly seeding a throwaway user in production
+
+- **What happened**: verifying T004's refactor, the agent started
+  `npm run dev` with the default `.env.local` (DATABASE_URL — the same
+  database production uses; this project has never had a separate dev DB,
+  only TEST_DATABASE_URL for automated tests) and seeded a QA user there.
+  Caught by the human, not self-caught. The agent then deleted the user and
+  confirmed the real DB otherwise untouched.
+
+- **Why it happened despite the standing rule**: the rule ("agent-created,
+  clearly prefixed, never touch pre-existing rows") has always been stated
+  per-phase in prompts, but nothing prevents defaulting to DATABASE_URL when
+  a prompt doesn't explicitly say "use TEST_DATABASE_URL." Advisory,
+  restated-per-session rules are exactly the class this project has
+  repeatedly found unreliable (branch discipline, twice before).
+
+- **Structural fix adopted**: added a `dev:test` npm script that starts the
+  dev server against TEST_DATABASE_URL explicitly, so agent-driven manual/
+  visual QA has a default command that cannot reach production data by
+  accident — converting an advisory rule into a structural one, same
+  pattern as the Playwright artifact containment fix.
