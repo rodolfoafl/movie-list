@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 
+import { createList, type CreateListState } from "@/app/(lists)/actions";
 import type { MovieSnapshot } from "@/app/(lists)/[listId]/actions";
 import {
   confirmAddToLists,
@@ -26,8 +27,30 @@ export function AddToListModal({
   onClose: () => void;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const createListFormRef = useRef<HTMLFormElement>(null);
   const [state, setState] = useState<ModalState>({ status: "loading" });
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
+  const [createListState, createListFormAction, creatingList] = useActionState(
+    async (_state: CreateListState, formData: FormData) => {
+      const result = await createList(_state, formData);
+      if (result?.id) {
+        createListFormRef.current?.reset();
+        setState((prev) =>
+          prev.status === "ready"
+            ? {
+                status: "ready",
+                lists: [
+                  ...prev.lists,
+                  { id: result.id, name: result.name, alreadyInList: false },
+                ],
+              }
+            : prev
+        );
+      }
+      return result;
+    },
+    undefined
+  );
 
   useEffect(() => {
     dialogRef.current?.showModal();
@@ -135,12 +158,45 @@ export function AddToListModal({
         </ul>
       )}
 
-      {(state.status === "ready" || state.status === "submitting") &&
-        state.lists.length === 0 && (
-          <p className="mt-4 text-sm text-zinc-600 dark:text-zinc-400">
-            Nenhuma lista encontrada.
+      {state.status === "ready" && state.lists.length === 0 && (
+        <div className="mt-4">
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            Você ainda não tem nenhuma lista. Crie uma para adicionar este filme.
           </p>
-        )}
+          <form
+            ref={createListFormRef}
+            action={createListFormAction}
+            className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-start"
+          >
+            <div className="flex-1">
+              <label htmlFor="add-to-list-new-list-name" className="sr-only">
+                Nome da lista
+              </label>
+              <input
+                id="add-to-list-new-list-name"
+                name="name"
+                type="text"
+                required
+                maxLength={60}
+                placeholder="Nome da nova lista"
+                className="w-full rounded border border-black/15 px-3 py-2 text-black dark:border-white/15 dark:bg-zinc-900 dark:text-zinc-50"
+              />
+              {createListState?.error && (
+                <p role="alert" className="mt-1 text-sm text-red-600 dark:text-red-400">
+                  {createListState.error}
+                </p>
+              )}
+            </div>
+            <button
+              type="submit"
+              disabled={creatingList}
+              className="rounded bg-black px-4 py-2 text-sm text-white transition-colors hover:bg-[#383838] disabled:opacity-50 dark:bg-zinc-50 dark:text-black dark:hover:bg-zinc-200"
+            >
+              {creatingList ? "Criando..." : "Criar lista"}
+            </button>
+          </form>
+        </div>
+      )}
 
       {state.status === "done" && (
         <ul className="mt-4 space-y-1 text-sm">
@@ -171,7 +227,7 @@ export function AddToListModal({
         >
           Fechar
         </button>
-        {state.status === "ready" && (
+        {state.status === "ready" && state.lists.length > 0 && (
           <button
             type="button"
             onClick={handleConfirm}
