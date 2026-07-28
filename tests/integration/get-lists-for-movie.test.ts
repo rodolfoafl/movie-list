@@ -40,4 +40,64 @@ describe("getListsForMovie", () => {
       { id: listB, name: "zz-test-B List", alreadyInList: false },
     ]);
   });
+
+  it("returns mixed alreadyInList values when the movie is in some but not all lists (SC-003)", async () => {
+    const listA = await createTestList("zz-test-A List");
+    const listB = await createTestList("zz-test-B List");
+    const listC = await createTestList("zz-test-C List");
+
+    await db.insert(movieEntries).values([
+      {
+        listId: listA,
+        tmdbId: MATRIX_TMDB_ID,
+        title: "The Matrix",
+        posterPath: null,
+        releaseYear: 1999,
+      },
+      {
+        listId: listC,
+        tmdbId: MATRIX_TMDB_ID,
+        title: "The Matrix",
+        posterPath: null,
+        releaseYear: 1999,
+      },
+    ]);
+
+    const result = await getListsForMovie(MATRIX_TMDB_ID);
+
+    expect(result).toEqual([
+      { id: listA, name: "zz-test-A List", alreadyInList: true },
+      { id: listB, name: "zz-test-B List", alreadyInList: false },
+      { id: listC, name: "zz-test-C List", alreadyInList: true },
+    ]);
+  });
+
+  it("returns alreadyInList: true for every list when the movie is in all of them (SC-003)", async () => {
+    const listA = await createTestList("zz-test-A List");
+    const listB = await createTestList("zz-test-B List");
+
+    await db.insert(movieEntries).values([
+      {
+        listId: listA,
+        tmdbId: MATRIX_TMDB_ID,
+        title: "The Matrix",
+        posterPath: null,
+        releaseYear: 1999,
+      },
+      {
+        listId: listB,
+        tmdbId: MATRIX_TMDB_ID,
+        title: "The Matrix",
+        posterPath: null,
+        releaseYear: 1999,
+      },
+    ]);
+
+    const result = await getListsForMovie(MATRIX_TMDB_ID);
+
+    expect(result).toEqual([
+      { id: listA, name: "zz-test-A List", alreadyInList: true },
+      { id: listB, name: "zz-test-B List", alreadyInList: true },
+    ]);
+  });
 });
