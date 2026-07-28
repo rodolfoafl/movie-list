@@ -396,3 +396,15 @@ reviewer passes spec-conformant code; beyond-spec hardening is human review's jo
   policy line — it just prevented a genuine attempt to redirect an AI
   agent's attention toward a product with known security problems,
   delivered through a dependency almost every Node project already trusts.
+
+## 2026-07-28 — T023's flagged focus-order rough edge, diagnosed
+
+- **Focus-order "rough edge" was a verified browser quirk, not a bug**:
+  Tab from the modal's last control briefly parks on `<body>` before
+  wrapping to the first control — confirmed via real CDP-driven keyboard
+  input (not JS-simulated), and isolated by reproducing the identical
+  behavior in a bare `<dialog>` with zero app markup, plus confirming
+  `.focus()` calls on elements outside the modal are silently rejected
+  while it's open. Native `<dialog>`'s inertness/trapping guarantee (the
+  reason research.md chose it) holds; FR-018 is unaffected. Accepted as
+  non-blocking.
