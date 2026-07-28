@@ -48,6 +48,25 @@ describe("addMovieToListWithOutcome", () => {
     expect(rows).toHaveLength(1);
   });
 
+  it("returns success (not a duplicate error) when another user concurrently added the movie between modal-open and confirmation (FR-022)", async () => {
+    const listId = await createTestList("zz-test-Concurrent Add");
+    // Simulates a second user's addMovieToList completing after this
+    // caller's modal snapshot was taken but before it confirmed.
+    await db.insert(movieEntries).values({
+      listId,
+      tmdbId: MATRIX.tmdbId,
+      title: MATRIX.title,
+      posterPath: MATRIX.posterPath,
+      releaseYear: MATRIX.releaseYear,
+    });
+
+    const outcome = await addMovieToListWithOutcome(listId, MATRIX);
+
+    expect(outcome).toEqual({ status: "success" });
+    const rows = await db.select().from(movieEntries).where(eq(movieEntries.listId, listId));
+    expect(rows).toHaveLength(1);
+  });
+
   it('returns failure with "Lista não existe mais." when the list no longer exists (FR-021)', async () => {
     const listId = await createTestList("zz-test-Deleted Soon");
     await db.delete(lists).where(eq(lists.id, listId));

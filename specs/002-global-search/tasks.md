@@ -91,7 +91,7 @@ Single Next.js App Router project (no frontend/backend split) — paths are `app
 **Independent Test**: Add a movie to one list, reopen "add to list" for it, confirm that list's checkbox is checked+disabled while others remain normal. (quickstart.md Scenario 3)
 
 - [x] T017 [US3] Extend `tests/integration/get-lists-for-movie.test.ts` (T009) with cases for a movie present in *some* lists (mixed `alreadyInList` true/false) and present in *every* list (all `alreadyInList: true`), confirming SC-003's "100% of already-containing lists shown checked+disabled" (depends on T012)
-- [ ] T018 [US3] Extend `tests/integration/add-movie-to-list-with-outcome.test.ts` (T010) with a concurrency case: the list already contains the movie at call time (simulating a concurrent add by the other user between modal-open and confirmation) → asserts `{ status: "success" }`, not a duplicate error (FR-022) (depends on T013)
+- [x] T018 [US3] Extend `tests/integration/add-movie-to-list-with-outcome.test.ts` (T010) with a concurrency case: the list already contains the movie at call time (simulating a concurrent add by the other user between modal-open and confirmation) → asserts `{ status: "success" }`, not a duplicate error (FR-022) (depends on T013)
 
 **Checkpoint**: All three FR-010/FR-011/FR-022 scenarios in quickstart.md Scenario 3 pass without any further production-code changes — the behavior was already built by US2; this phase only adds dedicated regression coverage for it.
 
