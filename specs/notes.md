@@ -408,3 +408,26 @@ reviewer passes spec-conformant code; beyond-spec hardening is human review's jo
   while it's open. Native `<dialog>`'s inertness/trapping guarantee (the
   reason research.md chose it) holds; FR-018 is unaffected. Accepted as
   non-blocking.
+
+
+## 2026-07-28 — Reviewer scope bug, and an evidence gap of our own making
+
+- **spec-compliance-reviewer was hardcoded to 001-movie-watchlist**: written
+  before 002-global-search existed, its source-of-truth paths never
+  generalized to accept a feature parameter. Auditing 002's Phase 7 against
+  001's artifacts correctly reported a mismatch — a real FAIL, but of the
+  reviewer's own scoping, not of the code. Fixed to infer/accept the
+  feature directory rather than assume one hardcoded feature. Lesson: a
+  tool built for a single-feature project needs to be revisited, not just
+  reused as-is, the moment a second feature exists.
+
+- **Evidence gap for verification-only tasks**: T022/T023/T024/T026's
+  commits are 2-line checkbox flips with no artifact backing the claimed
+  Playwright/manual runs — the only evidence lives in chat, not git,
+  because two earlier decisions compound: no UI component-testing library
+  (manual/Playwright verification is the only check that exists) + the
+  Playwright artifact containment fix (screenshots/logs deliberately
+  gitignored). Neither decision was wrong alone; together they leave zero
+  git-native audit trail for manual-only tasks. Fix: commit messages for
+  verification-only tasks must now include concrete observed details, not
+  just "pass" — turning an ephemeral check into a textual artifact.
