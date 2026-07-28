@@ -1,7 +1,7 @@
 import { config } from "dotenv";
 import { spawn } from "node:child_process";
 
-config({ path: ".env.local" });
+config({ path: ".env.local", quiet: true });
 
 if (!process.env.TEST_DATABASE_URL) {
   console.error(

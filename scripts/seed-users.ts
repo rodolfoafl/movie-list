@@ -1,6 +1,6 @@
 import { config } from "dotenv";
 
-config({ path: ".env.local" });
+config({ path: ".env.local", quiet: true });
 
 import bcrypt from "bcryptjs";
 import { neon } from "@neondatabase/serverless";
