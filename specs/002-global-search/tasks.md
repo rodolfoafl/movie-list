@@ -115,11 +115,11 @@ Single Next.js App Router project (no frontend/backend split) — paths are `app
 
 **Purpose**: Cross-cutting requirements that apply across all four stories (FR-016, FR-017, FR-018) plus final regression validation.
 
-- [x] T022 [P] Verify FR-016 (360px width, no horizontal scroll) on `app/search/page.tsx`, `GlobalMovieSearch.tsx`, and the open `AddToListModal.tsx`, per quickstart.md Scenario 7 step 1
-- [x] T023 [P] Verify FR-018 (fully keyboard-operable: Tab/Shift+Tab/Enter/Space/Escape) end-to-end through search → open modal → toggle checkboxes → confirm → close, per quickstart.md Scenario 7 step 2
+- [ ] T022 [P] Verify FR-016 (360px width, no horizontal scroll) on `app/search/page.tsx`, `GlobalMovieSearch.tsx`, and the open `AddToListModal.tsx`, per quickstart.md Scenario 7 step 1
+- [ ] T023 [P] Verify FR-018 (fully keyboard-operable: Tab/Shift+Tab/Enter/Space/Escape) end-to-end through search → open modal → toggle checkboxes → confirm → close, per quickstart.md Scenario 7 step 2
 - [x] T024 [P] Verify FR-017 (all new UI text in pt-BR) across `AppHeader.tsx`, `GlobalMovieSearch.tsx`, `AddToListModal.tsx`
-- [x] T025 Run `npm test`, `npm run lint`, and `npm run build` and fix any failures across the new/modified files listed in this plan
-- [x] T026 Run the full `quickstart.md` validation (all 8 scenarios) end-to-end against a running `npm run dev:test` instance
+- [ ] T025 Run `npm test`, `npm run lint`, and `npm run build` and fix any failures across the new/modified files listed in this plan
+- [ ] T026 Run the full `quickstart.md` validation (all 8 scenarios) end-to-end against a running `npm run dev:test` instance
 
 ---
 
