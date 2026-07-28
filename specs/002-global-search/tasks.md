@@ -119,7 +119,7 @@ Single Next.js App Router project (no frontend/backend split) — paths are `app
 - [x] T023 [P] Verify FR-018 (fully keyboard-operable: Tab/Shift+Tab/Enter/Space/Escape) end-to-end through search → open modal → toggle checkboxes → confirm → close, per quickstart.md Scenario 7 step 2
 - [x] T024 [P] Verify FR-017 (all new UI text in pt-BR) across `AppHeader.tsx`, `GlobalMovieSearch.tsx`, `AddToListModal.tsx`
 - [x] T025 Run `npm test`, `npm run lint`, and `npm run build` and fix any failures across the new/modified files listed in this plan
-- [ ] T026 Run the full `quickstart.md` validation (all 7 scenarios) end-to-end against a running `npm run dev` instance
+- [x] T026 Run the full `quickstart.md` validation (all 8 scenarios) end-to-end against a running `npm run dev:test` instance
 
 ---
 
