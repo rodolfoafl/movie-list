@@ -1,5 +1,6 @@
 "use client";
 
+import { Plus } from "lucide-react";
 import { useState } from "react";
 
 import { MovieResultCard } from "@/app/components/MovieResultCard";
@@ -62,9 +63,9 @@ export function GlobalMovieSearch() {
                   aria-label={`Adicionar "${result.title}" à lista`}
                   title={`Adicionar "${result.title}" à lista`}
                   onClick={() => setSelectedResult(result)}
-                  className="flex-shrink-0 rounded border border-black/15 px-3 py-1.5 text-sm text-zinc-700 transition-colors hover:bg-black/5 dark:border-white/15 dark:text-zinc-300 dark:hover:bg-white/5"
+                  className="flex-shrink-0 rounded border border-black/15 p-1.5 text-zinc-700 transition-colors hover:bg-black/5 dark:border-white/15 dark:text-zinc-300 dark:hover:bg-white/5"
                 >
-                  Adicionar à lista
+                  <Plus size={16} aria-hidden="true" />
                 </button>
               )}
             />
