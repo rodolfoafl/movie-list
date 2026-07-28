@@ -27,7 +27,7 @@ async function createTestList(name: string) {
 describe("createList — duplicate name rejection (FR-005)", () => {
   it("rejects a name that duplicates an existing list case/whitespace-insensitively, with no new row", async () => {
     const first = await createList(undefined, formDataWithName("Date Night"));
-    expect(first).toBeUndefined();
+    expect(first).toMatchObject({ name: "Date Night" });
 
     const second = await createList(undefined, formDataWithName(" date night "));
     expect(second?.error).toBeTruthy();
@@ -44,14 +44,39 @@ describe("createList — duplicate name rejection (FR-005)", () => {
     ]);
 
     const results = [a, b];
-    const successes = results.filter((result) => result === undefined);
-    const errors = results.filter((result) => result?.error);
+    const successes = results.filter((result) => result && "id" in result);
+    const errors = results.filter((result) => result && "error" in result && result.error);
 
     expect(successes).toHaveLength(1);
     expect(errors).toHaveLength(1);
 
     const rows = await db.select().from(lists);
     expect(rows).toHaveLength(1);
+  });
+});
+
+describe("createList — success return shape (FR-024/FR-025)", () => {
+  it("returns { id, name } for a newly created list instead of undefined", async () => {
+    const result = await createList(undefined, formDataWithName("zz-test-Movie Night"));
+
+    expect(result).not.toBeUndefined();
+    expect(result).toMatchObject({ name: "zz-test-Movie Night" });
+    expect(typeof (result as { id: string }).id).toBe("string");
+
+    const [row] = await db
+      .select()
+      .from(lists)
+      .where(eq(lists.id, (result as { id: string }).id));
+    expect(row.name).toBe("zz-test-Movie Night");
+  });
+
+  it("still rejects a duplicate name with { error } and no id/name fields", async () => {
+    await createList(undefined, formDataWithName("zz-test-Duplicate"));
+    const result = await createList(undefined, formDataWithName("zz-test-Duplicate"));
+
+    expect(result?.error).toBeTruthy();
+    expect(result).not.toHaveProperty("id");
+    expect(result).not.toHaveProperty("name");
   });
 });
 
@@ -124,7 +149,7 @@ describe("createList — deleted-name reuse (FR-027)", () => {
       undefined,
       formDataWithName("zz-test-Reused Name")
     );
-    expect(result).toBeUndefined();
+    expect(result).toMatchObject({ name: "zz-test-Reused Name" });
 
     const rows = await db
       .select()
