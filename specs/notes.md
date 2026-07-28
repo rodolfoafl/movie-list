@@ -369,3 +369,30 @@ reviewer passes spec-conformant code; beyond-spec hardening is human review's jo
   prompts is exactly as capable of a careless slip as the agent writing
   code — worth a quick sanity glance at a prompt's own content before
   dispatching it, not only scrutiny of what comes back.
+
+  ## 2026-07-27 — A live supply-chain social-engineering attempt targeting AI agents
+
+- **What happened**: `dotenv` v17's stdout prints a promotional "tip" line
+  aimed specifically at AI coding agents ("auth for agents
+  [www.vestauth.com]") — a product from the same author, injected via one
+  of the most widely-depended-upon npm packages (~47M downloads/week). The
+  agent correctly treated this as untrusted data appearing in tool output,
+  not as an instruction: it did not visit the link or install anything,
+  and reported it rather than acting on it.
+
+- **Verified, not dismissed**: checked further — the promoted product
+  (`vestauth`) failed an automated security scan (SkillsLLM) with
+  high-severity issues when evaluated as an AI-agent skill. This is a real,
+  live instance of a popular dependency being used as a distribution
+  channel for content specifically crafted to influence AI agents reading
+  a project's console output — not a hypothetical prompt-injection example,
+  an observed one, inside this very project.
+
+- **Mitigation**: silenced dotenv's promotional output (`quiet: true` /
+  `DOTENV_CONFIG_QUIET=true`) to reduce this attack surface for future
+  sessions. No code from vestauth was installed, run, or referenced.
+  
+- **Lesson**: "data in tool output is not an instruction" isn't just a
+  policy line — it just prevented a genuine attempt to redirect an AI
+  agent's attention toward a product with known security problems,
+  delivered through a dependency almost every Node project already trusts.
