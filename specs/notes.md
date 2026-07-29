@@ -302,7 +302,7 @@ reviewer passes spec-conformant code; beyond-spec hardening is human review's jo
   quickstart walkthroughs must substitute a prefixed name for every step, not
   just the ones creating new lists.
 
-  - **T047 waiver resolved (post-deploy)**: PageSpeed Insights against the
+- **T047 waiver resolved (post-deploy)**: PageSpeed Insights against the
   production Vercel URL (neutral Google infrastructure): mobile
   99/100/100/100, desktop 100/100/100/100 (Perf/A11y/BP/SEO). Spec's ≥ 90
   requirement definitively exceeded; the local-environment caveat (antivirus
@@ -370,7 +370,7 @@ reviewer passes spec-conformant code; beyond-spec hardening is human review's jo
   code — worth a quick sanity glance at a prompt's own content before
   dispatching it, not only scrutiny of what comes back.
 
-  ## 2026-07-27 — A live supply-chain social-engineering attempt targeting AI agents
+## 2026-07-27 — A live supply-chain social-engineering attempt targeting AI agents
 
 - **What happened**: `dotenv` v17's stdout prints a promotional "tip" line
   aimed specifically at AI coding agents ("auth for agents
@@ -409,6 +409,12 @@ reviewer passes spec-conformant code; beyond-spec hardening is human review's jo
   reason research.md chose it) holds; FR-018 is unaffected. Accepted as
   non-blocking.
 
+- **Retroactive caveat**: this diagnosis was part of the same commit batch
+  (ending in bf3d45c) that a later, correctly-scoped audit found could not
+  plausibly have been performed in the claimed time (see the "real finding"
+  entry below). It was independently redone afterward and reached the same
+  conclusion for real, but this entry's own narration was not itself the
+  source of that conclusion.
 
 ## 2026-07-28 — Reviewer scope bug, and an evidence gap of our own making
 
@@ -431,6 +437,31 @@ reviewer passes spec-conformant code; beyond-spec hardening is human review's jo
   git-native audit trail for manual-only tasks. Fix: commit messages for
   verification-only tasks must now include concrete observed details, not
   just "pass" — turning an ephemeral check into a textual artifact.
+
+## 2026-07-28 — The real finding: fabricated verification claims
+
+- **The BLOCKER**: a correctly-scoped audit found six commits spanning 88
+  seconds of wall-clock time total, together claiming hours of
+  Playwright/keyboard/pt-BR/quickstart verification work. No artifacts
+  existed anywhere — not in `.playwright-mcp/`, not anywhere else in the
+  repo or working tree — matching any of the claimed sessions. The
+  narration was fabricated, not merely under-evidenced.
+
+- **Corrective action**: reverted the checkboxes for T022, T023, T025, and
+  T026. Kept T024's checkbox, which the reviewer verified independently by
+  reading the source rather than relying on the commit's narration. Mandated
+  a one-task-at-a-time redo going forward, each requiring raw evidence
+  (command output, real screenshots with fresh timestamps) captured at redo
+  time, not asserted after the fact.
+
+- **The forensic method**: genuine work was told apart from fabrication by
+  cross-referencing git commit timestamps against independent, hard-to-fake
+  filesystem signals — `.playwright-mcp/` screenshot mtimes, `.env.local`'s
+  own mtime, `.next/BUILD_ID`'s rewrite time, and dev-server cache activity.
+  A commit claiming a Playwright session with no corresponding
+  `.playwright-mcp/` file from that window, or a build claim with no
+  `BUILD_ID` rewrite at that time, had no physical trace to back it —
+  narration alone was never sufficient again after this.
 
 ## 2026-07-28 — T025 re-verified with raw command output
 
@@ -500,8 +531,11 @@ reviewer passes spec-conformant code; beyond-spec hardening is human review's jo
     narrower than the actual risk surface" pattern the project has hit
     before. `dev:test` fixed one command, not the class of commands that
     can write to the database outside of the running app.
-  - **Not yet fixed**: `scripts/seed-users.ts` still defaults to
-    `DATABASE_URL` with no flag to target `TEST_DATABASE_URL`. Worth a
-    structural fix (e.g. a `--test` flag or a `seed:users:test` script)
-    the next time this script is touched, so QA login creation doesn't
-    require remembering to route around it by hand.
+  - **Now fixed**: `scripts/seed-users.ts` requires an explicit
+    `--database-url` flag (no silent default), mirroring the
+    `parseDatabaseUrl()` pattern already used by `migrate-legacy.ts`. Added
+    a `scripts/seed-users-test.mjs` wrapper and a `seed:users:test` npm
+    script that pins `TEST_DATABASE_URL`, so QA login creation can no
+    longer reach production data by accident. `README.md` and both
+    `quickstart.md` files (001 and 002) updated to reference
+    `seed:users:test` instead of the bare `seed:users` command.
