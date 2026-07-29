@@ -453,3 +453,55 @@ reviewer passes spec-conformant code; beyond-spec hardening is human review's jo
 
   No fixes were needed across any of the new/modified files listed in
   plan.md for this feature.
+
+## 2026-07-28 — T022's "screenshot confirmed" claim corrected with a real file, and a repeat of the DATABASE_URL/TEST_DATABASE_URL incident
+
+- **The gap**: commit 79e2823's T022 note states "screenshot confirmed
+  layout fits, checkboxes and Fechar/Confirmar buttons fully visible, no
+  overflow" but no `.png` existed anywhere in the repo with a timestamp in
+  that verification window — the claim didn't match what was on disk. Not
+  amending 79e2823 itself (it's no longer the branch tip; T025's commit
+  sits after it, and this project's convention is new commits over
+  amends). Instead: retook the screenshots for real and recording them
+  here so the record is corrected going forward.
+
+- **Re-verification**: started `npm run dev:test` (TEST_DATABASE_URL,
+  confirmed via `.env.local`'s `dev:test` wrapper — see the 2026-07-27
+  entry below on why this matters), resized to 360×740 via Playwright MCP,
+  and captured three real PNGs, all confirmed on disk with fresh
+  timestamps inside `.playwright-mcp/` (the containment directory):
+  - `.playwright-mcp/t022-360px-empty-search.png` — `/search`, no query.
+    `document.documentElement.scrollWidth === clientWidth` (360 === 360).
+  - `.playwright-mcp/t022-360px-with-results.png` — searched "Matrix",
+    11 results rendered. scrollWidth === clientWidth (345 === 345).
+  - `.playwright-mcp/t022-360px-modal-open.png` — `AddToListModal` open
+    for "Matrix" with 2 lists as checkboxes; scrollWidth === clientWidth
+    (345 === 345). Visually confirmed (read the PNG back): dialog fits
+    entirely within the 360px viewport, both checkboxes and the
+    Fechar/Confirmar buttons fully visible, no overflow — the original
+    claim was accurate, it just had no artifact behind it until now.
+
+- **A repeat of the 2026-07-27 DATABASE_URL incident, this time self-caught
+  within the same task**: to get 2 lists for the modal screenshot, ran
+  `npm run seed:users` for a QA login — but `scripts/seed-users.ts` reads
+  `process.env.DATABASE_URL` directly (not `TEST_DATABASE_URL`), so this
+  briefly seeded `qa-t022-verify@example.com` into **production** despite
+  the dev server itself correctly running against `TEST_DATABASE_URL` via
+  `dev:test`. Caught immediately (not by a human this time), deleted from
+  production, then re-seeded correctly straight into `TEST_DATABASE_URL`.
+  The two QA lists (`QA-T022-A`, `QA-T022-B`) created during the
+  screenshot session were deleted from `TEST_DATABASE_URL` afterward; the
+  QA user was left in `TEST_DATABASE_URL` as a reusable, clearly-prefixed
+  login for future manual/Playwright sessions.
+  - **Why the structural fix from 2026-07-27 didn't prevent this**:
+    `dev:test` only guards the *dev server's* DB connection. It says
+    nothing about `seed:users`, which is a separate script with its own
+    hardcoded `DATABASE_URL` reference — the same "advisory scope,
+    narrower than the actual risk surface" pattern the project has hit
+    before. `dev:test` fixed one command, not the class of commands that
+    can write to the database outside of the running app.
+  - **Not yet fixed**: `scripts/seed-users.ts` still defaults to
+    `DATABASE_URL` with no flag to target `TEST_DATABASE_URL`. Worth a
+    structural fix (e.g. a `--test` flag or a `seed:users:test` script)
+    the next time this script is touched, so QA login creation doesn't
+    require remembering to route around it by hand.
