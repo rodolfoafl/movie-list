@@ -42,7 +42,7 @@ Three moments worth reading in [`specs/notes.md`](specs/notes.md):
 cp .env.example .env.local   # DATABASE_URL (Neon), AUTH_SECRET, TMDB_API_KEY
 npm install
 npx drizzle-kit push
-npm run seed:users -- --email you@example.com --password <pw> --email partner@example.com --password <pw>
+npm run seed:users -- --database-url "$DATABASE_URL" --email you@example.com --password <pw> --email partner@example.com --password <pw>
 npm run dev
 ```
 

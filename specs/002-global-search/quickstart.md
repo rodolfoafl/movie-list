@@ -4,7 +4,7 @@
 
 - `.env.local` with a working DB connection and TMDB credentials (same as the rest of the app — see repo README).
 - `npm run dev` running.
-- At least one seeded user (`npm run seed:users` if needed) and a logged-in session.
+- At least one seeded user (`npm run seed:users:test -- --email qa@example.com --password <pw>` if needed) and a logged-in session.
 
 ## Setup
 

@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "seed:users": "tsx scripts/seed-users.ts",
+    "seed:users:test": "node scripts/seed-users-test.mjs",
     "dev:test": "node scripts/dev-test.mjs"
   },
   "dependencies": {

@@ -28,17 +28,34 @@ function parseArgs(argv: string[]): { email: string; password: string }[] {
 
   if (accounts.length === 0) {
     throw new Error(
-      "No accounts provided. Usage: seed:users -- --email <email> --password <password> [--email <email> --password <password> ...]"
+      "No accounts provided. Usage: seed:users -- --database-url <url> --email <email> --password <password> [--email <email> --password <password> ...]"
     );
   }
 
   return accounts;
 }
 
-async function main() {
-  const accounts = parseArgs(process.argv.slice(2));
+function parseDatabaseUrl(argv: string[]): string {
+  const flagIndex = argv.indexOf("--database-url");
+  const fromFlag = flagIndex !== -1 ? argv[flagIndex + 1] : undefined;
+  const databaseUrl = fromFlag ?? process.env.SEED_DATABASE_URL;
 
-  const sql = neon(process.env.DATABASE_URL!);
+  if (!databaseUrl) {
+    throw new Error(
+      "No target database configured. Pass --database-url <url> or set SEED_DATABASE_URL.\n" +
+        "This script intentionally ignores DATABASE_URL to avoid silently writing to the app's default database."
+    );
+  }
+
+  return databaseUrl;
+}
+
+async function main() {
+  const argv = process.argv.slice(2);
+  const accounts = parseArgs(argv);
+  const databaseUrl = parseDatabaseUrl(argv);
+
+  const sql = neon(databaseUrl);
   const db = drizzle(sql);
 
   for (const { email, password } of accounts) {
