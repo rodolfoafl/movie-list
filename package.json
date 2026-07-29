@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "seed:users": "tsx scripts/seed-users.ts",
-    "migrate:legacy": "tsx scripts/migrate-legacy.ts"
+    "seed:users:test": "node scripts/seed-users-test.mjs",
+    "dev:test": "node scripts/dev-test.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

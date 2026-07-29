@@ -9,14 +9,18 @@ import { isUniqueViolation } from "@/app/lib/db/errors";
 import { lists } from "@/app/lib/db/schema";
 
 export type ActionState = { error?: string } | undefined;
+export type CreateListState =
+  | { error: string; id?: undefined; name?: undefined }
+  | { id: string; name: string; error?: undefined }
+  | undefined;
 
 const NAME_MAX_LENGTH = 60;
 const DUPLICATE_NAME_ERROR = "Este nome já está em uso.";
 
 export async function createList(
-  _state: ActionState,
+  _state: CreateListState,
   formData: FormData
-): Promise<ActionState> {
+): Promise<CreateListState> {
   await verifySession();
 
   const rawName = formData.get("name");
@@ -42,8 +46,13 @@ export async function createList(
     return { error: DUPLICATE_NAME_ERROR };
   }
 
+  let created: { id: string; name: string };
+
   try {
-    await db.insert(lists).values({ name });
+    [created] = await db
+      .insert(lists)
+      .values({ name })
+      .returning({ id: lists.id, name: lists.name });
   } catch (error) {
     if (isUniqueViolation(error)) {
       return { error: DUPLICATE_NAME_ERROR };
@@ -52,6 +61,8 @@ export async function createList(
   }
 
   revalidatePath("/");
+
+  return created;
 }
 
 export async function renameList(

@@ -31,10 +31,16 @@ Validates the feature end-to-end against the acceptance scenarios in [spec.md](.
    npx drizzle-kit push
    ```
 
-3. Seed the two known users (see [data-model.md](./data-model.md) — `User` entity):
+3. Seed the two known users (see [data-model.md](./data-model.md) — `User` entity). `seed:users` targets the database explicitly — pass `--database-url` or set `SEED_DATABASE_URL` — and intentionally ignores `DATABASE_URL` so it never silently writes to the app's default database:
 
    ```bash
-   npm run seed:users -- --email you@example.com --password <pw> --email partner@example.com --password <pw>
+   npm run seed:users -- --database-url "$DATABASE_URL" --email you@example.com --password <pw> --email partner@example.com --password <pw>
+   ```
+
+   For QA/agent use against the test database instead, use `seed:users:test`, which pins `TEST_DATABASE_URL` automatically:
+
+   ```bash
+   npm run seed:users:test -- --email qa@example.com --password <pw>
    ```
 
 4. Start the dev server:

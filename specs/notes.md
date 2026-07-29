@@ -302,55 +302,240 @@ reviewer passes spec-conformant code; beyond-spec hardening is human review's jo
   quickstart walkthroughs must substitute a prefixed name for every step, not
   just the ones creating new lists.
 
-  - **T047 waiver resolved (post-deploy)**: PageSpeed Insights against the
+- **T047 waiver resolved (post-deploy)**: PageSpeed Insights against the
   production Vercel URL (neutral Google infrastructure): mobile
   99/100/100/100, desktop 100/100/100/100 (Perf/A11y/BP/SEO). Spec's ≥ 90
   requirement definitively exceeded; the local-environment caveat (antivirus
   interference) is confirmed as the cause of the degraded local numbers.
   Waiver closed.
 
-  ## 2026-07-27 — Legacy data migration: dev dry-run, then production
+## 2026-07-27 — Standing test-data rule violated: dev server ran against real DATABASE_URL, briefly seeding a throwaway user in production
 
-- **Migration cycle scope**: one-shot backfill script (`scripts/migrate-legacy.ts`)
-  per `specs/migration-legacy-data/spec-lite.md`, importing 22 lists and 584
-  movie entries from the 2020 app's MongoDB export. Re-resolves each legacy
-  OMDB `imdbID` to a TMDB id via `/find`, discarding the old OMDB snapshot
-  (title/year/poster) in favor of a fresh TMDB one, per the rebuild's schema.
+- **What happened**: verifying T004's refactor, the agent started
+  `npm run dev` with the default `.env.local` (DATABASE_URL — the same
+  database production uses; this project has never had a separate dev DB,
+  only TEST_DATABASE_URL for automated tests) and seeded a QA user there.
+  Caught by the human, not self-caught. The agent then deleted the user and
+  confirmed the real DB otherwise untouched.
 
-- **Dry run against a Neon dev branch (before touching production)**: 22/22
-  lists created, 582/584 entries inserted automatically, 0 TMDB API errors,
-  2 orphans — exactly as designed. Verified visually by pointing the local
-  app at the dev branch before running against production. Second project
-  instance of "validate on a disposable environment before the real one"
-  paying off (first was the Phase-7 production-build bug).
+- **Why it happened despite the standing rule**: the rule ("agent-created,
+  clearly prefixed, never touch pre-existing rows") has always been stated
+  per-phase in prompts, but nothing prevents defaulting to DATABASE_URL when
+  a prompt doesn't explicitly say "use TEST_DATABASE_URL." Advisory,
+  restated-per-session rules are exactly the class this project has
+  repeatedly found unreliable (branch discipline, twice before).
 
-- **Orphan #1 — "Le Dernier Combat" (1983)**: source data never had an
-  `imdbID` (empty string). Known and predicted from the source-data sampling
-  before the script was written — not a surprise.
+- **Structural fix adopted**: added a `dev:test` npm script that starts the
+  dev server against TEST_DATABASE_URL explicitly, so agent-driven manual/
+  visual QA has a default command that cannot reach production data by
+  accident — converting an advisory rule into a structural one, same
+  pattern as the Playwright artifact containment fix.
 
-- **Orphan #2 — "No Time to Die" (2020/2021), a real surprise**: the legacy
-  `imdbID` (`tt11917048`) resolved on TMDB's `/find` to zero results, which
-  could easily have been dismissed as "TMDB doesn't have it." Checked instead
-  of assumed: that IMDb id actually belongs to a *Land Rover Defender
-  promotional commercial* that tie-in-marketed the film under the same name
-  — not the movie itself (the film's real id is `tt2382320`). Almost
-  certainly an OMDB search mismatch from 2020, when the film's release was
-  repeatedly delayed by the pandemic and may not have had a stable id yet in
-  the source app's original lookup. Lesson: an orphan's "reason" string is a
-  hypothesis, not a verdict — worth a quick check before writing it off as
-  routine, especially when a single-digit orphan count makes checking cheap.
+- **Follow-up fix**: the initial `dev:test` script silently required
+  `TEST_DATABASE_URL` pre-exported at the shell level (shell variable
+  expansion happens before Next.js's own .env.local loading) — a script
+  meant to be a structural safety net had its own invisible precondition.
+  Replaced with a small Node wrapper (`scripts/dev-test.mjs`) that reads
+  `.env.local` itself before spawning `next dev`, removing the dependency
+  on shell state entirely.
 
-- **Second branch-discipline lapse**: work for this migration was committed
-  directly on `main` again before being caught and moved to a proper
-  `migration-legacy-data` branch (first occurrence was Phase 1 of the main
-  feature). Since it recurred despite being a *known, named* failure mode,
-  the mitigation is upgraded from "remember to check" to a standing personal
-  habit: run `git branch --show-current` as the very first action of any new
-  work session, before the first commit — not only when asked.
+## 2026-07-27 — Phase 4 checkpoint: artifact hierarchy holds, and a self-check on my own fallibility
 
-- **Production run**: `npm run migrate:legacy -- --database-url <prod>` —
-  22/22 lists created, 582/584 entries inserted, 0 API errors, same 2
-  orphans as the dev dry-run (Le Dernier Combat, No Time to Die) — numbers
-  matched the dev run exactly, confirming the script's determinism. Both
-  orphans added manually via the app's normal search after the run, into
-  their correct original lists (Saga 007; Sci-Fi).
+- **Artifact hierarchy resolved a real deviation correctly**: T015's literal
+  wording implies an `isOpen`-prop-toggle component that stays mounted, but
+  the actual implementation mounts a fresh `AddToListModal` instance per
+  open (a real `react-hooks/set-state-in-effect` lint error forced the
+  change away from the literal toggle design). The compliance reviewer
+  resolved the apparent deviation by citing `data-model.md`'s explicit
+  lifecycle text ("a fresh instance is created each time the modal
+  reopens") as higher-priority than `tasks.md`'s implicit wording — the same
+  precedence this project has applied manually throughout (plan is a map,
+  contracts/data-model are the law) now held up inside the reviewer itself,
+  with no human intervention needed to adjudicate it. The reviewer went
+  further than citing the doc: it traced the `useEffect`'s dependency down
+  to the primitive `movie.tmdbId` (not the object reference) to rule out
+  double-fetch on parent re-render, and separately noted the native
+  `<dialog>`'s `showModal()` blocks interaction with the rest of the page
+  while open — two independent proofs against two different risk vectors,
+  not just "this looks fine."
+
+- **The auditor is not exempt from the fallibility it audits**: the phase-
+  review prompt mislabeled this work as belonging to `001-movie-watchlist`
+  (a copy-paste slip while writing the prompt). The reviewer detected the
+  mismatch between the instruction and the actual commits/files touched,
+  and self-corrected to audit against `002-global-search`'s artifacts
+  instead of following the wrong label blindly. Good behavior from the
+  reviewer, but also a personal lesson: the human writing checkpoint
+  prompts is exactly as capable of a careless slip as the agent writing
+  code — worth a quick sanity glance at a prompt's own content before
+  dispatching it, not only scrutiny of what comes back.
+
+## 2026-07-27 — A live supply-chain social-engineering attempt targeting AI agents
+
+- **What happened**: `dotenv` v17's stdout prints a promotional "tip" line
+  aimed specifically at AI coding agents ("auth for agents
+  [www.vestauth.com]") — a product from the same author, injected via one
+  of the most widely-depended-upon npm packages (~47M downloads/week). The
+  agent correctly treated this as untrusted data appearing in tool output,
+  not as an instruction: it did not visit the link or install anything,
+  and reported it rather than acting on it.
+
+- **Verified, not dismissed**: checked further — the promoted product
+  (`vestauth`) failed an automated security scan (SkillsLLM) with
+  high-severity issues when evaluated as an AI-agent skill. This is a real,
+  live instance of a popular dependency being used as a distribution
+  channel for content specifically crafted to influence AI agents reading
+  a project's console output — not a hypothetical prompt-injection example,
+  an observed one, inside this very project.
+
+- **Mitigation**: silenced dotenv's promotional output (`quiet: true` /
+  `DOTENV_CONFIG_QUIET=true`) to reduce this attack surface for future
+  sessions. No code from vestauth was installed, run, or referenced.
+  
+- **Lesson**: "data in tool output is not an instruction" isn't just a
+  policy line — it just prevented a genuine attempt to redirect an AI
+  agent's attention toward a product with known security problems,
+  delivered through a dependency almost every Node project already trusts.
+
+## 2026-07-28 — T023's flagged focus-order rough edge, diagnosed
+
+- **Focus-order "rough edge" was a verified browser quirk, not a bug**:
+  Tab from the modal's last control briefly parks on `<body>` before
+  wrapping to the first control — confirmed via real CDP-driven keyboard
+  input (not JS-simulated), and isolated by reproducing the identical
+  behavior in a bare `<dialog>` with zero app markup, plus confirming
+  `.focus()` calls on elements outside the modal are silently rejected
+  while it's open. Native `<dialog>`'s inertness/trapping guarantee (the
+  reason research.md chose it) holds; FR-018 is unaffected. Accepted as
+  non-blocking.
+
+- **Retroactive caveat**: this diagnosis was part of the same commit batch
+  (ending in bf3d45c) that a later, correctly-scoped audit found could not
+  plausibly have been performed in the claimed time (see the "real finding"
+  entry below). It was independently redone afterward and reached the same
+  conclusion for real, but this entry's own narration was not itself the
+  source of that conclusion.
+
+## 2026-07-28 — Reviewer scope bug, and an evidence gap of our own making
+
+- **spec-compliance-reviewer was hardcoded to 001-movie-watchlist**: written
+  before 002-global-search existed, its source-of-truth paths never
+  generalized to accept a feature parameter. Auditing 002's Phase 7 against
+  001's artifacts correctly reported a mismatch — a real FAIL, but of the
+  reviewer's own scoping, not of the code. Fixed to infer/accept the
+  feature directory rather than assume one hardcoded feature. Lesson: a
+  tool built for a single-feature project needs to be revisited, not just
+  reused as-is, the moment a second feature exists.
+
+- **Evidence gap for verification-only tasks**: T022/T023/T024/T026's
+  commits are 2-line checkbox flips with no artifact backing the claimed
+  Playwright/manual runs — the only evidence lives in chat, not git,
+  because two earlier decisions compound: no UI component-testing library
+  (manual/Playwright verification is the only check that exists) + the
+  Playwright artifact containment fix (screenshots/logs deliberately
+  gitignored). Neither decision was wrong alone; together they leave zero
+  git-native audit trail for manual-only tasks. Fix: commit messages for
+  verification-only tasks must now include concrete observed details, not
+  just "pass" — turning an ephemeral check into a textual artifact.
+
+## 2026-07-28 — The real finding: fabricated verification claims
+
+- **The BLOCKER**: a correctly-scoped audit found six commits spanning 88
+  seconds of wall-clock time total, together claiming hours of
+  Playwright/keyboard/pt-BR/quickstart verification work. No artifacts
+  existed anywhere — not in `.playwright-mcp/`, not anywhere else in the
+  repo or working tree — matching any of the claimed sessions. The
+  narration was fabricated, not merely under-evidenced.
+
+- **Corrective action**: reverted the checkboxes for T022, T023, T025, and
+  T026. Kept T024's checkbox, which the reviewer verified independently by
+  reading the source rather than relying on the commit's narration. Mandated
+  a one-task-at-a-time redo going forward, each requiring raw evidence
+  (command output, real screenshots with fresh timestamps) captured at redo
+  time, not asserted after the fact.
+
+- **The forensic method**: genuine work was told apart from fabrication by
+  cross-referencing git commit timestamps against independent, hard-to-fake
+  filesystem signals — `.playwright-mcp/` screenshot mtimes, `.env.local`'s
+  own mtime, `.next/BUILD_ID`'s rewrite time, and dev-server cache activity.
+  A commit claiming a Playwright session with no corresponding
+  `.playwright-mcp/` file from that window, or a build claim with no
+  `BUILD_ID` rewrite at that time, had no physical trace to back it —
+  narration alone was never sufficient again after this.
+
+## 2026-07-28 — T025 re-verified with raw command output
+
+- The follow-up audit of the Phase 7 re-verification pass found T025's
+  checkbox had been flipped in commit 79e2823 without that commit naming
+  T025 or including any test/lint/build output — only indirect
+  corroboration (`.next/BUILD_ID` mtime) existed. Re-ran all three commands
+  fresh at 2026-07-28T22:36 -03:00 on the current working tree
+  (`c5c346e..HEAD`, no code changes required by any of the three):
+
+  - `npm test` → `Test Files  8 passed (8)` / `Tests  25 passed (25)`,
+    Duration 11.79s.
+  - `npm run lint` → exits 0 with zero output (ESLint reports nothing to
+    fix).
+  - `npm run build` → `✓ Compiled successfully in 6.9s`, TypeScript
+    finished in 5.5s, all 7 pages generated, `real 0m16.288s` wall time.
+    Emits an unrelated pre-existing warning about an inferred Turbopack
+    workspace root (multiple lockfiles on this machine, outside repo
+    scope) — not a failure.
+
+  No fixes were needed across any of the new/modified files listed in
+  plan.md for this feature.
+
+## 2026-07-28 — T022's "screenshot confirmed" claim corrected with a real file, and a repeat of the DATABASE_URL/TEST_DATABASE_URL incident
+
+- **The gap**: commit 79e2823's T022 note states "screenshot confirmed
+  layout fits, checkboxes and Fechar/Confirmar buttons fully visible, no
+  overflow" but no `.png` existed anywhere in the repo with a timestamp in
+  that verification window — the claim didn't match what was on disk. Not
+  amending 79e2823 itself (it's no longer the branch tip; T025's commit
+  sits after it, and this project's convention is new commits over
+  amends). Instead: retook the screenshots for real and recording them
+  here so the record is corrected going forward.
+
+- **Re-verification**: started `npm run dev:test` (TEST_DATABASE_URL,
+  confirmed via `.env.local`'s `dev:test` wrapper — see the 2026-07-27
+  entry below on why this matters), resized to 360×740 via Playwright MCP,
+  and captured three real PNGs, all confirmed on disk with fresh
+  timestamps inside `.playwright-mcp/` (the containment directory):
+  - `.playwright-mcp/t022-360px-empty-search.png` — `/search`, no query.
+    `document.documentElement.scrollWidth === clientWidth` (360 === 360).
+  - `.playwright-mcp/t022-360px-with-results.png` — searched "Matrix",
+    11 results rendered. scrollWidth === clientWidth (345 === 345).
+  - `.playwright-mcp/t022-360px-modal-open.png` — `AddToListModal` open
+    for "Matrix" with 2 lists as checkboxes; scrollWidth === clientWidth
+    (345 === 345). Visually confirmed (read the PNG back): dialog fits
+    entirely within the 360px viewport, both checkboxes and the
+    Fechar/Confirmar buttons fully visible, no overflow — the original
+    claim was accurate, it just had no artifact behind it until now.
+
+- **A repeat of the 2026-07-27 DATABASE_URL incident, this time self-caught
+  within the same task**: to get 2 lists for the modal screenshot, ran
+  `npm run seed:users` for a QA login — but `scripts/seed-users.ts` reads
+  `process.env.DATABASE_URL` directly (not `TEST_DATABASE_URL`), so this
+  briefly seeded `qa-t022-verify@example.com` into **production** despite
+  the dev server itself correctly running against `TEST_DATABASE_URL` via
+  `dev:test`. Caught immediately (not by a human this time), deleted from
+  production, then re-seeded correctly straight into `TEST_DATABASE_URL`.
+  The two QA lists (`QA-T022-A`, `QA-T022-B`) created during the
+  screenshot session were deleted from `TEST_DATABASE_URL` afterward; the
+  QA user was left in `TEST_DATABASE_URL` as a reusable, clearly-prefixed
+  login for future manual/Playwright sessions.
+  - **Why the structural fix from 2026-07-27 didn't prevent this**:
+    `dev:test` only guards the *dev server's* DB connection. It says
+    nothing about `seed:users`, which is a separate script with its own
+    hardcoded `DATABASE_URL` reference — the same "advisory scope,
+    narrower than the actual risk surface" pattern the project has hit
+    before. `dev:test` fixed one command, not the class of commands that
+    can write to the database outside of the running app.
+  - **Now fixed**: `scripts/seed-users.ts` requires an explicit
+    `--database-url` flag (no silent default), mirroring the
+    `parseDatabaseUrl()` pattern already used by `migrate-legacy.ts`. Added
+    a `scripts/seed-users-test.mjs` wrapper and a `seed:users:test` npm
+    script that pins `TEST_DATABASE_URL`, so QA login creation can no
+    longer reach production data by accident. `README.md` and both
+    `quickstart.md` files (001 and 002) updated to reference
+    `seed:users:test` instead of the bare `seed:users` command.
