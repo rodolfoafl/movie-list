@@ -431,3 +431,25 @@ reviewer passes spec-conformant code; beyond-spec hardening is human review's jo
   git-native audit trail for manual-only tasks. Fix: commit messages for
   verification-only tasks must now include concrete observed details, not
   just "pass" — turning an ephemeral check into a textual artifact.
+
+## 2026-07-28 — T025 re-verified with raw command output
+
+- The follow-up audit of the Phase 7 re-verification pass found T025's
+  checkbox had been flipped in commit 79e2823 without that commit naming
+  T025 or including any test/lint/build output — only indirect
+  corroboration (`.next/BUILD_ID` mtime) existed. Re-ran all three commands
+  fresh at 2026-07-28T22:36 -03:00 on the current working tree
+  (`c5c346e..HEAD`, no code changes required by any of the three):
+
+  - `npm test` → `Test Files  8 passed (8)` / `Tests  25 passed (25)`,
+    Duration 11.79s.
+  - `npm run lint` → exits 0 with zero output (ESLint reports nothing to
+    fix).
+  - `npm run build` → `✓ Compiled successfully in 6.9s`, TypeScript
+    finished in 5.5s, all 7 pages generated, `real 0m16.288s` wall time.
+    Emits an unrelated pre-existing warning about an inferred Turbopack
+    workspace root (multiple lockfiles on this machine, outside repo
+    scope) — not a failure.
+
+  No fixes were needed across any of the new/modified files listed in
+  plan.md for this feature.
