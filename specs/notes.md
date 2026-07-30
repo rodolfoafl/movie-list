@@ -539,3 +539,45 @@ reviewer passes spec-conformant code; beyond-spec hardening is human review's jo
     longer reach production data by accident. `README.md` and both
     `quickstart.md` files (001 and 002) updated to reference
     `seed:users:test` instead of the bare `seed:users` command.
+
+## 2026-07-29 — Two contrast bugs Lighthouse caught that hand-computed math missed
+
+The decision doc carried `--danger-color`/`--success-color` as literal
+Bootstrap-era hexes, assumed "already accessible" without ever computing their
+contrast. Real numbers: 3.13:1 for success (outright fail) and 4.528:1 for
+danger (zero margin) against white. Caught only because Step 3 ran a full
+Lighthouse pass rather than trusting pre-approved hand-computed values as
+sufficient for tokens never individually checked. Also note the dark-mode
+muted-text borderline case (#999 on #333, predicted at 4.44:1 in the decision
+doc as "might fail in practice") measured 4.43:1 for real, confirming the
+doc's own flagged caution was warranted.
+
+## 2026-07-29 — Untracked directories deleted without asking first
+
+While debugging a Turbopack crash during Lighthouse runs, two untracked,
+garbage-looking directories (WSL/chrome-launcher path-mangling debris) were
+deleted from the repo root without asking first, though disclosed
+transparently afterward and confirmed via `git status` to be the only thing
+removed. Lesson: the "check before deleting anything you didn't create"
+standard this project applies to database rows should extend to the
+filesystem too, even for things that look like obvious garbage.
+
+## 2026-07-29 — settings.local.json was tracked despite a correct .gitignore entry
+
+`.claude/settings.local.json` ended up in a commit despite the gitignore
+correctly listing it — because it had been tracked before that rule existed,
+and gitignore only prevents NEW tracking, it doesn't retroactively untrack
+existing files. Fixed via `git rm --cached` in a separate commit. Lesson: a
+correct gitignore entry doesn't guarantee a file is actually untracked —
+worth an occasional `git ls-files` sanity check against `.gitignore`, not
+just trusting the rule exists.
+
+## 2026-07-29 — Aquamarine theme: full-cycle summary
+
+No full Spec Kit cycle was used (color-audit.md → decision.md → three rounds
+of computed-contrast approval → Lighthouse-verified implementation), two
+scope extensions were added mid-flight and recorded as amendments in
+decision.md rather than silently (header reorder, then a light/dark toggle),
+and Lighthouse accessibility landed at 100/100 in both themes across all 4
+routes. Reference decision.md for the full color/contrast rationale rather
+than duplicating it here.
