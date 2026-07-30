@@ -107,26 +107,26 @@ export function AddToListModal({
       ref={dialogRef}
       onClose={onClose}
       aria-labelledby="add-to-list-heading"
-      className="m-auto w-[90vw] max-w-md min-h-[200px] rounded-lg border border-black/10 bg-white p-6 text-black backdrop:bg-black/50 dark:border-white/10 dark:bg-zinc-950 dark:text-zinc-50"
+      className="m-auto w-[90vw] max-w-md min-h-[200px] rounded-lg border border-ink-border/10 bg-surface p-6 text-ink backdrop:bg-black/50"
     >
       <h2 id="add-to-list-heading" className="text-lg font-semibold">
         Adicionar à lista
       </h2>
-      <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{movie.title}</p>
+      <p className="mt-1 text-sm text-ink-muted">{movie.title}</p>
 
       {state.status === "loading" && (
-        <p className="mt-4 text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="mt-4 text-sm text-ink-muted">
           Carregando listas...
         </p>
       )}
 
       {state.status === "error" && (
-        <div className="mt-4 rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
+        <div className="mt-4 rounded border border-warning-border bg-warning-bg p-3 text-sm text-warning-text">
           <p>Não foi possível carregar as listas agora.</p>
           <button
             type="button"
             onClick={retryFetch}
-            className="mt-2 rounded border border-amber-400 px-3 py-1 text-sm hover:bg-amber-100 dark:hover:bg-amber-900"
+            className="mt-2 rounded border border-warning-border px-3 py-1 text-sm hover:bg-warning-border/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-warning-bg"
           >
             Tentar novamente
           </button>
@@ -143,12 +143,12 @@ export function AddToListModal({
                 checked={list.alreadyInList || checkedIds.has(list.id)}
                 disabled={list.alreadyInList || state.status !== "ready"}
                 onChange={() => toggle(list.id)}
-                className="h-4 w-4"
+                className="h-4 w-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
               />
               <label htmlFor={`add-to-list-${list.id}`} className="text-sm">
                 {list.name}
                 {list.alreadyInList && (
-                  <span className="ml-1 text-zinc-500 dark:text-zinc-400">
+                  <span className="ml-1 text-ink-muted">
                     (já está nesta lista)
                   </span>
                 )}
@@ -160,7 +160,7 @@ export function AddToListModal({
 
       {state.status === "ready" && state.lists.length === 0 && (
         <div className="mt-4">
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          <p className="text-sm text-ink-muted">
             Você ainda não tem nenhuma lista. Crie uma para adicionar este filme.
           </p>
           <form
@@ -179,10 +179,10 @@ export function AddToListModal({
                 required
                 maxLength={60}
                 placeholder="Nome da nova lista"
-                className="w-full rounded border border-black/15 px-3 py-2 text-black dark:border-white/15 dark:bg-zinc-900 dark:text-zinc-50"
+                className="w-full rounded border border-ink-border/15 px-3 py-2 text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
               />
               {createListState?.error && (
-                <p role="alert" className="mt-1 text-sm text-red-600 dark:text-red-400">
+                <p role="alert" className="mt-1 text-sm text-danger">
                   {createListState.error}
                 </p>
               )}
@@ -190,7 +190,7 @@ export function AddToListModal({
             <button
               type="submit"
               disabled={creatingList}
-              className="rounded bg-black px-4 py-2 text-sm text-white transition-colors hover:bg-[#383838] disabled:opacity-50 dark:bg-zinc-50 dark:text-black dark:hover:bg-zinc-200"
+              className="rounded bg-primary px-4 py-2 text-sm text-on-primary transition-colors hover:bg-primary-hover disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
             >
               {creatingList ? "Criando..." : "Criar lista"}
             </button>
@@ -206,9 +206,7 @@ export function AddToListModal({
               <li
                 key={outcome.listId}
                 className={
-                  outcome.status === "success"
-                    ? "text-emerald-700 dark:text-emerald-400"
-                    : "text-red-700 dark:text-red-400"
+                  outcome.status === "success" ? "text-success" : "text-danger"
                 }
               >
                 {list?.name ?? outcome.listId}:{" "}
@@ -223,7 +221,7 @@ export function AddToListModal({
         <button
           type="button"
           onClick={() => dialogRef.current?.close()}
-          className="rounded border border-black/15 px-3 py-1.5 text-sm dark:border-white/15"
+          className="rounded border border-ink-border/15 px-3 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
         >
           Fechar
         </button>
@@ -231,7 +229,7 @@ export function AddToListModal({
           <button
             type="button"
             onClick={handleConfirm}
-            className="rounded bg-black px-3 py-1.5 text-sm text-white dark:bg-white dark:text-black"
+            className="rounded bg-primary px-3 py-1.5 text-sm text-on-primary transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
           >
             Confirmar
           </button>
@@ -240,7 +238,7 @@ export function AddToListModal({
           <button
             type="button"
             disabled
-            className="rounded bg-black px-3 py-1.5 text-sm text-white opacity-50 dark:bg-white dark:text-black"
+            className="rounded bg-primary px-3 py-1.5 text-sm text-on-primary opacity-50"
           >
             Adicionando...
           </button>

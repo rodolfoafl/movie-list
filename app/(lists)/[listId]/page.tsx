@@ -71,16 +71,16 @@ export default async function ListDetailPage({
     .orderBy(sql`lower(${movieEntries.title})`);
 
   return (
-    <div className="flex flex-1 flex-col bg-zinc-50 p-6 dark:bg-black">
+    <div className="flex flex-1 flex-col bg-paper p-6">
       <div className="mx-auto w-full max-w-2xl">
         <Link
           href="/"
-          className="text-sm text-zinc-600 transition-colors hover:underline dark:text-zinc-400"
+          className="rounded-sm text-sm text-ink-muted transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
         >
           ← Minhas listas
         </Link>
 
-        <h1 className="mt-2 text-2xl font-semibold text-black dark:text-zinc-50">
+        <h1 className="mt-2 text-2xl font-semibold text-ink">
           {list.name}
         </h1>
 
@@ -92,7 +92,7 @@ export default async function ListDetailPage({
         <section aria-labelledby="movies-heading" className="mt-8">
           <h2
             id="movies-heading"
-            className="text-lg font-medium text-black dark:text-zinc-50"
+            className="text-lg font-medium text-ink"
           >
             Filmes
           </h2>
@@ -111,10 +111,10 @@ export default async function ListDetailPage({
                       : `/${list.id}?status=${option.value}`
                   }
                   aria-current={filter === option.value ? "true" : undefined}
-                  className={`rounded border px-3 py-1.5 text-sm transition-colors ${
+                  className={`rounded border px-3 py-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-paper ${
                     filter === option.value
-                      ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
-                      : "border-black/15 text-zinc-700 hover:bg-black/5 dark:border-white/15 dark:text-zinc-300 dark:hover:bg-white/5"
+                      ? "border-ink bg-ink text-paper"
+                      : "border-ink-border/15 text-ink-soft hover:bg-ink/5"
                   }`}
                 >
                   {option.label}
@@ -124,12 +124,12 @@ export default async function ListDetailPage({
           )}
 
           {!hasEntries ? (
-            <p className="mt-4 text-zinc-600 dark:text-zinc-400">
+            <p className="mt-4 text-ink-muted">
               Esta lista ainda não tem filmes. Busque acima para adicionar o
               primeiro.
             </p>
           ) : visibleEntries.length === 0 ? (
-            <p className="mt-4 text-zinc-600 dark:text-zinc-400">
+            <p className="mt-4 text-ink-muted">
               Nenhum filme corresponde a este filtro.
             </p>
           ) : (
@@ -137,9 +137,9 @@ export default async function ListDetailPage({
               {visibleEntries.map((entry) => (
                 <li
                   key={entry.id}
-                  className="flex items-center gap-3 rounded-lg border border-black/10 bg-white p-3 dark:border-white/10 dark:bg-zinc-950"
+                  className="flex items-center gap-3 rounded-lg border border-ink-border/10 bg-surface p-3"
                 >
-                  <div className="flex h-24 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded bg-zinc-200 dark:bg-zinc-800">
+                  <div className="flex h-24 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded bg-decor/20">
                     {entry.posterPath ? (
                       <Image
                         src={`${TMDB_POSTER_BASE_URL}${entry.posterPath}`}
@@ -160,16 +160,16 @@ export default async function ListDetailPage({
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-black dark:text-zinc-50">
+                    <p className="font-medium text-ink">
                       {entry.title}
                     </p>
                     {entry.releaseYear && (
-                      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                      <p className="text-sm text-ink-muted">
                         {entry.releaseYear}
                       </p>
                     )}
                     {entry.watchedAt && (
-                      <p className="text-sm text-emerald-700 dark:text-emerald-400">
+                      <p className="text-sm text-success">
                         Assistido em{" "}
                         {entry.watchedAt.toLocaleDateString("pt-BR")}
                       </p>

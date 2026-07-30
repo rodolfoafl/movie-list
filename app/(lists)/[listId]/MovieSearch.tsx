@@ -41,7 +41,7 @@ export function MovieSearch({
 
   return (
     <section aria-labelledby="search-heading" className="mt-8">
-      <h2 id="search-heading" className="text-lg font-medium text-black dark:text-zinc-50">
+      <h2 id="search-heading" className="text-lg font-medium text-ink">
         Buscar filmes
       </h2>
 
@@ -60,16 +60,16 @@ export function MovieSearch({
           }
         }}
         placeholder="Buscar por título..."
-        className="mt-2 w-full rounded border border-black/15 px-3 py-2 text-black dark:border-white/15 dark:bg-zinc-900 dark:text-zinc-50"
+        className="mt-2 w-full rounded border border-ink-border/15 px-3 py-2 text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
       />
 
       {status === "error" && (
-        <div className="mt-4 rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
+        <div className="mt-4 rounded border border-warning-border bg-warning-bg p-3 text-sm text-warning-text">
           <p>Não foi possível buscar filmes agora. Tente novamente.</p>
           <button
             type="button"
             onClick={retry}
-            className="mt-2 rounded border border-amber-400 px-3 py-1 text-sm hover:bg-amber-100 dark:hover:bg-amber-900"
+            className="mt-2 rounded border border-warning-border px-3 py-1 text-sm hover:bg-warning-border/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-warning-bg"
           >
             Tentar novamente
           </button>
@@ -77,7 +77,7 @@ export function MovieSearch({
       )}
 
       {status === "success" && results.length === 0 && (
-        <p className="mt-4 text-zinc-600 dark:text-zinc-400">
+        <p className="mt-4 text-ink-muted">
           Nenhum filme encontrado para essa busca.
         </p>
       )}
@@ -95,7 +95,7 @@ export function MovieSearch({
                 result={result}
                 renderAction={() =>
                   isInList ? (
-                    <span className="flex-shrink-0 text-sm text-zinc-500 dark:text-zinc-400">
+                    <span className="flex-shrink-0 text-sm text-ink-muted">
                       Já está nesta lista
                     </span>
                   ) : (
@@ -105,7 +105,7 @@ export function MovieSearch({
                       onClick={() => handleAdd(result)}
                       aria-label={`Adicionar "${result.title}" à lista`}
                       title={`Adicionar "${result.title}" à lista`}
-                      className="flex-shrink-0 rounded border border-black/15 p-1.5 text-zinc-700 transition-colors hover:bg-black/5 disabled:opacity-50 dark:border-white/15 dark:text-zinc-300 dark:hover:bg-white/5"
+                      className="flex-shrink-0 rounded border border-ink-border/15 p-1.5 text-ink-soft transition-colors hover:bg-ink/5 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
                     >
                       <Plus size={16} aria-hidden="true" />
                     </button>
