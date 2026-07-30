@@ -32,7 +32,7 @@ export function ListRow({ id, name }: { id: string; name: string }) {
 
   if (isEditing) {
     return (
-      <li className="rounded-lg border border-black/10 bg-white p-4 dark:border-white/10 dark:bg-zinc-950">
+      <li className="rounded-lg border border-ink-border/10 bg-surface p-4">
         <form
           ref={formRef}
           action={formAction}
@@ -49,25 +49,25 @@ export function ListRow({ id, name }: { id: string; name: string }) {
             maxLength={60}
             defaultValue={name}
             autoFocus
-            className="flex-1 rounded border border-black/15 px-3 py-1.5 text-black dark:border-white/15 dark:bg-zinc-900 dark:text-zinc-50"
+            className="flex-1 rounded border border-ink-border/15 px-3 py-1.5 text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
           />
           <button
             type="submit"
             disabled={pending}
-            className="rounded bg-black px-3 py-1.5 text-sm text-white transition-colors hover:bg-[#383838] disabled:opacity-50 dark:bg-zinc-50 dark:text-black dark:hover:bg-zinc-200"
+            className="rounded bg-primary px-3 py-1.5 text-sm text-on-primary transition-colors hover:bg-primary-hover disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
           >
             {pending ? "Salvando..." : "Salvar"}
           </button>
           <button
             type="button"
             onClick={() => setIsEditing(false)}
-            className="rounded border border-black/15 px-3 py-1.5 text-sm text-zinc-700 transition-colors hover:bg-black/5 dark:border-white/15 dark:text-zinc-300 dark:hover:bg-white/5"
+            className="rounded border border-ink-border/15 px-3 py-1.5 text-sm text-ink-soft transition-colors hover:bg-ink/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
           >
             Cancelar
           </button>
         </form>
         {state?.error && (
-          <p role="alert" className="mt-1 text-sm text-red-600 dark:text-red-400">
+          <p role="alert" className="mt-1 text-sm text-danger">
             {state.error}
           </p>
         )}
@@ -76,10 +76,10 @@ export function ListRow({ id, name }: { id: string; name: string }) {
   }
 
   return (
-    <li className="flex items-center gap-2 rounded-lg border border-black/10 bg-white p-4 dark:border-white/10 dark:bg-zinc-950">
+    <li className="flex items-center gap-2 rounded-lg border border-ink-border/10 bg-surface p-4">
       <Link
         href={`/${id}`}
-        className="flex-1 text-black transition-colors hover:underline dark:text-zinc-50"
+        className="flex-1 rounded-sm text-ink transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
       >
         {name}
       </Link>
@@ -87,7 +87,7 @@ export function ListRow({ id, name }: { id: string; name: string }) {
         type="button"
         onClick={() => setIsEditing(true)}
         aria-label={`Renomear ${name}`}
-        className="flex-shrink-0 rounded border border-black/15 px-3 py-1.5 text-sm text-zinc-700 transition-colors hover:bg-black/5 dark:border-white/15 dark:text-zinc-300 dark:hover:bg-white/5"
+        className="flex-shrink-0 rounded border border-ink-border/15 px-3 py-1.5 text-sm text-ink-soft transition-colors hover:bg-ink/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
       >
         Renomear
       </button>
@@ -97,7 +97,7 @@ export function ListRow({ id, name }: { id: string; name: string }) {
         disabled={isDeleting}
         aria-label={`Excluir lista "${name}"`}
         title={`Excluir lista "${name}"`}
-        className="flex-shrink-0 rounded border border-red-300 p-1.5 text-red-700 transition-colors hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950"
+        className="flex-shrink-0 rounded border border-danger/40 p-1.5 text-danger transition-colors hover:bg-danger/10 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
       >
         <Trash2 size={16} aria-hidden="true" />
       </button>

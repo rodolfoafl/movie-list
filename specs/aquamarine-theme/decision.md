@@ -107,3 +107,36 @@ via opacity/weight, not a second red.
   than folded into the new system.
 - Not redesigning layout, spacing, or typography — colors and focus-ring
   only, per the roadmap issue's scope.
+
+**Amendment (2026-07-29)**: one deliberate exception to the layout
+non-goal — `AppHeader.tsx` is reordered to a brand mark ("B&R Filmes" +
+a `lucide-react` `Clapperboard` icon) on the left, with the "Listas" /
+"Filmes" nav links on the right. This is a small, explicitly-scoped
+layout addition, not a reopening of the layout non-goal generally.
+
+Alongside it, the header background changes from `bg-surface` (the
+paper/charcoal token, theme-toggling) to `bg-primary` — the aquamarine
+fill stays the same value in both light and dark mode, since
+`--color-primary` is a flat hex, not a `:root`-toggled variable. This
+makes the header a themed, theme-invariant surface, same as the primary
+button. No new color is derived: icon, wordmark, and nav-link text use
+`text-on-primary`, the focus ring uses `ring-on-primary`, the ring offset
+uses `ring-offset-primary`, and the bottom border uses `border-on-primary/10`
+— reusing the exact `#333333` on-`#7fffd4` pairing already computed and
+approved under Finding #2 (10.32:1, passes AA for both normal text and the
+3:1 non-text/focus-ring minimum). This mirrors the existing primary-button
+pattern rather than making a new design decision.
+
+**Amendment (2026-07-29): manual theme toggle**. A second deliberate
+exception to the "colors and focus-ring only" non-goal — a manual
+light/dark toggle button is added to `AppHeader.tsx` (simple two-state
+switch, no third "system" option). Initial state on first load follows
+`prefers-color-scheme`; after that, the user's explicit toggle choice is
+persisted in `localStorage` (per-device, since this is a shared 2-person
+workspace and devices may differ) and overrides the OS preference on
+subsequent loads. No new color tokens are introduced — the toggle only
+switches which of the already-approved light/dark values from this
+document apply, by adding a `dark`/`light` class on `<html>` (read via a
+`beforeInteractive` inline script to avoid a flash of the wrong theme) that
+takes precedence over the `prefers-color-scheme` media query used
+elsewhere in `globals.css`.

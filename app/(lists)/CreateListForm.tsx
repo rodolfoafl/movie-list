@@ -34,10 +34,10 @@ export function CreateListForm() {
           required
           maxLength={60}
           placeholder="Nome da nova lista"
-          className="w-full rounded border border-black/15 px-3 py-2 text-black dark:border-white/15 dark:bg-zinc-900 dark:text-zinc-50"
+          className="w-full rounded border border-ink-border/15 px-3 py-2 text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
         />
         {state?.error && (
-          <p role="alert" className="mt-1 text-sm text-red-600 dark:text-red-400">
+          <p role="alert" className="mt-1 text-sm text-danger">
             {state.error}
           </p>
         )}
@@ -45,7 +45,7 @@ export function CreateListForm() {
       <button
         type="submit"
         disabled={pending}
-        className="rounded bg-black px-4 py-2 text-white transition-colors hover:bg-[#383838] disabled:opacity-50 dark:bg-zinc-50 dark:text-black dark:hover:bg-zinc-200"
+        className="rounded bg-primary px-4 py-2 text-on-primary transition-colors hover:bg-primary-hover disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
       >
         {pending ? "Criando..." : "Criar lista"}
       </button>

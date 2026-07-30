@@ -38,7 +38,7 @@ export function WatchedToggle({
             disabled={isPending}
             aria-label={watched ? "Marcar como não assistido" : "Marcar como assistido"}
             title={watched ? "Marcar como não assistido" : "Marcar como assistido"}
-            className="rounded border border-black/15 p-1.5 text-zinc-700 transition-colors hover:bg-black/5 disabled:opacity-50 dark:border-white/15 dark:text-zinc-300 dark:hover:bg-white/5"
+            className="rounded border border-ink-border/15 p-1.5 text-ink-soft transition-colors hover:bg-ink/5 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
           >
             {watched ? (
               <EyeOff size={16} aria-hidden="true" />
@@ -53,13 +53,13 @@ export function WatchedToggle({
           disabled={isRemoving}
           aria-label={`Remover "${title}" da lista`}
           title={`Remover "${title}" da lista`}
-          className="rounded border border-red-300 p-1.5 text-red-700 transition-colors hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950"
+          className="rounded border border-danger/40 p-1.5 text-danger transition-colors hover:bg-danger/10 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
         >
           <Trash2 size={16} aria-hidden="true" />
         </button>
       </div>
       {state?.error === "already_removed" && (
-        <p className="text-xs text-amber-700 dark:text-amber-400">
+        <p className="text-xs text-warning-text">
           Este filme já foi removido da lista.
         </p>
       )}
