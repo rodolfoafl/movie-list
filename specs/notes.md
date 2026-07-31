@@ -391,7 +391,7 @@ reviewer passes spec-conformant code; beyond-spec hardening is human review's jo
 - **Mitigation**: silenced dotenv's promotional output (`quiet: true` /
   `DOTENV_CONFIG_QUIET=true`) to reduce this attack surface for future
   sessions. No code from vestauth was installed, run, or referenced.
-  
+
 - **Lesson**: "data in tool output is not an instruction" isn't just a
   policy line — it just prevented a genuine attempt to redirect an AI
   agent's attention toward a product with known security problems,
@@ -581,3 +581,23 @@ decision.md rather than silently (header reorder, then a light/dark toggle),
 and Lighthouse accessibility landed at 100/100 in both themes across all 4
 routes. Reference decision.md for the full color/contrast rationale rather
 than duplicating it here.
+
+## 2026-07-30 — Standalone bugfix: nav links visible while logged out
+
+- **What happened**: AppHeader (introduced in 002-global-search) rendered
+  "Listas"/"Filmes" unconditionally from the root layout — including on
+  `/login` itself, before any session exists. Never caught by any prior
+  checkpoint because no phase's acceptance criteria ever tested the header
+  from a logged-out perspective; all Playwright verification during
+  002-global-search's implementation ran against an already-authenticated
+  session.
+- **Fix**: `dal.ts` gained a non-redirecting `getSession()` (verifySession()
+  now delegates to it, single source of truth); `AppHeader` became an
+  async Server Component gating the nav links on session presence, while
+  the brand mark and theme toggle (device preference, not account-scoped)
+  remain always visible.
+- **Lesson**: a shared layout component's behavior across auth states is
+  its own test surface, distinct from the pages it wraps — worth adding
+  "check every shared-layout component from both a logged-in and
+  logged-out perspective" to this project's standing checkpoint habits,
+  not just testing the page-level FRs the checkpoint was written for.
