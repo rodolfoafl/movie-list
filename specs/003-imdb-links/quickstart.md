@@ -4,7 +4,7 @@
 
 - `.env.local` with a working DB connection and `TMDB_API_KEY` (same as the rest of the app).
 - `npm run dev:test` running (seeds/uses `teste@teste.com` / `teste123` — do not seed manually).
-- The `movie_entries.imdb_id` migration applied (`npx drizzle-kit migrate` or equivalent, once generated during implementation).
+- The `movie_entries.imdb_id` migration applied (`npx drizzle-kit migrate` or equivalent, once generated during implementation). **If targeting a DB whose schema was ever provisioned via `drizzle-kit push`** (this includes `TEST_DATABASE_URL` and, per `specs/notes.md`'s 2026-07-31 entry, will also apply to `DATABASE_URL` the first time it's migrated) — `drizzle-kit migrate` will fail trying to replay migration 0000 from scratch unless `drizzle.__drizzle_migrations` is first backfilled to reflect what's already live; see that entry for the exact one-time pre-step and why it's needed.
 - At least one list with existing entries, and one list with zero entries.
 
 ## Scenario 1 — IMDb link on an existing list entry (User Story 1 / FR-001–FR-003, SC-001)

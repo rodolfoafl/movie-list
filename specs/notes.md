@@ -601,3 +601,93 @@ than duplicating it here.
   "check every shared-layout component from both a logged-in and
   logged-out perspective" to this project's standing checkpoint habits,
   not just testing the page-level FRs the checkpoint was written for.
+
+## 2026-07-31 — `drizzle-kit migrate` fails against any DB provisioned via `push` (T002, 003-imdb-links) — production pre-step needed
+
+**What happened**: T002 (generate + apply the `imdb_id` migration) ran
+`npx drizzle-kit migrate` against `TEST_DATABASE_URL` and it failed with
+`relation "lists" already exists` while attempting to replay migration
+`0000_thankful_vargas.sql` from scratch. Root cause, confirmed by querying
+`drizzle.__drizzle_migrations` directly: the table existed but had **zero
+rows**. `migrate` has no record of migration 0000 ever running, so it
+tries to reapply every migration in `drizzle/meta/_journal.json` from the
+start — including `CREATE TABLE "lists"`, which collides with the table
+that (per `specs/001-movie-watchlist/tasks.md` T009) was actually created
+via `drizzle-kit generate` + **`drizzle-kit push`**, not `migrate`. `push`
+diffs the live schema directly and never writes to `__drizzle_migrations`
+at all — this gap exists by construction on any DB whose schema was ever
+established via `push`, regardless of which project or environment.
+
+**Fix applied to `TEST_DATABASE_URL` only**: computed the exact
+`sha256(fileContents)` hash and `journal.entries[].when` timestamp
+drizzle-orm itself would compute (`node_modules/drizzle-orm/migrator.js`'s
+`readMigrationFiles`, confirmed by reading that source directly — not
+approximated), verified via `information_schema.columns` that
+`0000_thankful_vargas.sql`'s DDL was in fact already live, then inserted
+one row into `drizzle.__drizzle_migrations` recording migration 0000 as
+already-applied before re-running `migrate` — which then correctly
+applied only `0001_typical_katie_power.sql` (the new `imdb_id` column).
+
+**⚠️ Production pre-step, not yet done**: `DATABASE_URL` (the real app
+database) was also provisioned via `drizzle-kit push` in
+001-movie-watchlist's T009 — never `migrate` — so it almost certainly has
+the identical gap (either no `drizzle.__drizzle_migrations` table at all,
+or one with zero rows) and **will fail the same way** the first time
+anyone runs `drizzle-kit migrate` against it, unless this backfill step
+runs first. This has not been done against `DATABASE_URL` and must not be
+done casually — do it deliberately, once, by whoever owns the production
+deploy, immediately before the first real `drizzle-kit migrate` run
+against it (i.e. as part of shipping 003-imdb-links, or whichever
+migration reaches production first).
+
+**Exact pre-step** (adapt the `.tag` per migration actually already live —
+do not blindly loop over every journal entry; confirm each one's DDL is
+truly present via `information_schema` first, the same way T002 did for
+the test DB, since blindly marking an unapplied migration as "applied"
+would cause its DDL to silently never run):
+
+```bash
+# 1. Confirm the gap exists (empty or missing __drizzle_migrations
+#    despite lists/movie_entries/users already existing):
+node --env-file=.env.local -e "
+const { neon } = require('@neondatabase/serverless');
+const sql = neon(process.env.DATABASE_URL);
+sql\`select table_name from information_schema.tables where table_schema in ('public','drizzle')\`
+  .then(r => console.log(r));
+"
+
+# 2. For each migration confirmed already-live (start with 0000; repeat
+#    per additional pre-existing migration if there ever is one), record
+#    it using drizzle's own hash/timestamp — refuses to run twice:
+node --env-file=.env.local -e "
+const { neon } = require('@neondatabase/serverless');
+const crypto = require('crypto');
+const fs = require('fs');
+const sql = neon(process.env.DATABASE_URL);
+const journal = JSON.parse(fs.readFileSync('drizzle/meta/_journal.json'));
+const entry = journal.entries.find(e => e.tag === '0000_thankful_vargas');
+const query = fs.readFileSync(\`drizzle/\${entry.tag}.sql\`).toString();
+const hash = crypto.createHash('sha256').update(query).digest('hex');
+(async () => {
+  await sql\`CREATE SCHEMA IF NOT EXISTS drizzle\`;
+  await sql\`CREATE TABLE IF NOT EXISTS drizzle.__drizzle_migrations (id SERIAL PRIMARY KEY, hash text NOT NULL, created_at bigint)\`;
+  const existing = await sql\`select count(*)::int as count from drizzle.__drizzle_migrations\`;
+  if (existing[0].count > 0) throw new Error('Refusing: table already has rows.');
+  await sql\`insert into drizzle.__drizzle_migrations (hash, created_at) values (\${hash}, \${entry.when})\`;
+  console.log('Recorded', entry.tag, 'as already applied.');
+})();
+"
+
+# 3. Only now run the real migration — it will apply just the genuinely
+#    new migration(s), e.g. 0001_typical_katie_power.sql (imdb_id):
+npx drizzle-kit migrate
+```
+
+**Lesson**: `drizzle-kit push` and `drizzle-kit migrate` are two
+non-interoperable schema-application paths that silently diverge the
+moment `push` is used even once — `migrate`'s tracking table has no way
+to learn about DDL that `push` already applied. Any environment
+provisioned with `push` (this app's `DATABASE_URL`, confirmed via
+001-movie-watchlist T009, and evidently `TEST_DATABASE_URL` too) needs
+this one-time backfill before its first `migrate` call, or `migrate` will
+try to recreate tables that already exist and fail outright.
