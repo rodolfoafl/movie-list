@@ -47,6 +47,7 @@ export const movieEntries = pgTable(
     title: text("title").notNull(),
     posterPath: text("poster_path"),
     releaseYear: integer("release_year"),
+    imdbId: text("imdb_id"),
     watchedAt: timestamp("watched_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
