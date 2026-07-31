@@ -30,7 +30,7 @@ Single Next.js App Router project (matches 001/002 — no frontend/backend split
 **Purpose**: Schema change and generated migration — the one piece every user story depends on.
 
 - [x] T001 Add nullable `imdb_id` (`text`) column to `movieEntries` in `app/lib/db/schema.ts` (after `releaseYear`, before `watchedAt`, per [data-model.md](./data-model.md) — no index, no default)
-- [ ] T002 Run `npx drizzle-kit generate` to produce the new migration file under `drizzle/` for T001's schema change; apply it to the local/test database (`npx drizzle-kit migrate` or equivalent per [quickstart.md](./quickstart.md) prerequisites)
+- [x] T002 Run `npx drizzle-kit generate` to produce the new migration file under `drizzle/` for T001's schema change; apply it to the local/test database (`npx drizzle-kit migrate` or equivalent per [quickstart.md](./quickstart.md) prerequisites)
 
 **Checkpoint**: `movie_entries` table has the new column locally; existing rows have `imdb_id = NULL` and continue working unmodified (FR-006).
 
