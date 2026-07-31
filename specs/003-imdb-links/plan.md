@@ -8,7 +8,7 @@
 
 ## Summary
 
-Add a plain-text "IMDb" link to movie entries on list-detail pages and to search result cards (both in-list and global search, via the shared `MovieResultCard`). `movie_entries` gains a nullable `imdb_id` column, resolved from TMDB's `GET /movie/{id}?append_to_response=external_ids` at add-time inside the existing `addMovieToList` flow — best-effort, never blocking the add. Search results resolve their own IMDb id via a new authenticated Route Handler, one extra TMDB call per rendered result, triggered only after that query's results have already settled (piggybacking on the existing 400ms debounce rather than adding a second one), cached for the life of the search session, and cancelled when a newer query supersedes it — keeping added volume proportionate to distinct settled queries and previously-unseen movies (FR-017, FR-021), not keystrokes. A same-shape standalone backfill script (`scripts/backfill-imdb-ids.ts`, mirroring `scripts/migrate-legacy.ts`) resolves `imdb_id` for every pre-existing `movie_entries` row lacking one, sequentially, rate-limited, idempotent, with an end-of-run orphan report. See [research.md](./research.md) for the eight design decisions this rests on.
+Add a plain-text "IMDb" link to movie entries on list-detail pages and to search result cards (both in-list and global search, via the shared `MovieResultCard`). `movie_entries` gains a nullable `imdb_id` column, resolved from TMDB's `GET /movie/{id}?append_to_response=external_ids`. The add always inserts immediately; when no session-cached id is available, resolution happens in a `next/server` `after()` background task scheduled inside the existing `addMovieToList` flow and applied via a follow-up `UPDATE` once it settles — never blocking or delaying the add itself (research.md §9). Search results resolve their own IMDb id via a new authenticated Route Handler, one extra TMDB call per rendered result, triggered only after that query's results have already settled (piggybacking on the existing 400ms debounce rather than adding a second one), cached for the life of the search session, and cancelled when a newer query supersedes it — keeping added volume proportionate to distinct settled queries and previously-unseen movies (FR-017, FR-021), not keystrokes. A same-shape standalone backfill script (`scripts/backfill-imdb-ids.ts`, mirroring `scripts/migrate-legacy.ts`) resolves `imdb_id` for every pre-existing `movie_entries` row lacking one, sequentially, rate-limited, idempotent, with an end-of-run orphan report. See [research.md](./research.md) for the eight design decisions this rests on.
 
 ## Technical Context
 
@@ -24,7 +24,7 @@ Add a plain-text "IMDb" link to movie entries on list-detail pages and to search
 
 **Project Type**: Single Next.js web application (no separate frontend/backend split)
 
-**Performance Goals**: No new latency target for the add flow itself (SC-002 — add must feel exactly as fast as today); the TMDB external-ids lookup on add is best-effort with a bounded timeout so a slow/failing call can never visibly delay the add. Search-result lookups are non-blocking relative to existing card rendering (FR-022) and bounded to at most one extra TMDB call per distinct, previously-unseen result per settled query (FR-021), capped by the existing 10-result search cap.
+**Performance Goals**: No new latency target for the add flow itself (SC-002 — add must feel exactly as fast as today), and this is now a structural guarantee rather than a bound: `addMovieToList` inserts the row and returns before any TMDB call is made when no session-cached id exists, deferring the lookup to an `after()` background task (research.md §9) — the add's latency is provably independent of TMDB entirely, not merely bounded by a timeout. Search-result lookups are non-blocking relative to existing card rendering (FR-022) and bounded to at most one extra TMDB call per distinct, previously-unseen result per settled query (FR-021), capped by the existing 10-result search cap.
 
 **Constraints**: FR-008 (add-time lookup failure/timeout must not block or fail the add), FR-014/FR-015/FR-016/FR-017 (session-cache reuse, stale-query cancellation, debounce-aligned triggering, keystroke-disproportionate volume), FR-021 (lookup volume bound expressed relative to the search cap, not hardcoded), FR-022 (sequential-after-render, non-blocking card update), FR-023 (add-time reuse of a session-cached id ahead of a fresh lookup), FR-019 (360px, no horizontal scroll, no crowding of existing actions), CLAUDE.md's Lighthouse accessibility ≥90 gate
 
@@ -63,9 +63,11 @@ app/
 │                                      # flow and the new route handler)
 ├── (lists)/[listId]/
 │   ├── actions.ts                   # MODIFIED — addMovieToList: MovieSnapshot gains optional
-│   │                                  # imdbId?: string | null (FR-023 tri-state: undefined = "look
-│   │                                  # it up", null = "already tried, no match", string = "resolved");
-│   │                                  # insert now stores movieEntries.imdbId
+│   │                                  # imdbId?: string | null (FR-023 tri-state: undefined = "not yet
+│   │                                  # resolved", null = "already tried, no match", string = "resolved");
+│   │                                  # insert always stores movieEntries.imdbId immediately (never
+│   │                                  # awaits TMDB); undefined case additionally schedules an after()
+│   │                                  # background task (resolveImdbId + no-op-safe UPDATE) (research.md §9)
 │   └── page.tsx                     # MODIFIED — list-detail entry row renders <ImdbLink imdbId={entry.imdbId} />
 ├── search/
 │   ├── GlobalMovieSearch.tsx         # MODIFIED — consumes new useImdbIds hook, passes resolved id

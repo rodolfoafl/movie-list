@@ -73,7 +73,7 @@ Single Next.js App Router project (matches 001/002 — no frontend/backend split
 ### Tests for User Story 2
 
 - [ ] T007 [P] [US2] Integration test for the route in `tests/integration/external-ids-route.test.ts` — auth gate (unauthenticated → `401 { error: "unauthenticated" }`, mirroring `tests/unit/tmdb-search-route.test.ts`'s mock-`verifySession`-rejection pattern), missing/non-numeric `tmdbId` → `200 { imdbId: null }` without calling `resolveImdbId`, TMDB failure mocked via `resolveImdbId` → still `200 { imdbId: null }` (never `503`, per contracts/external-ids-route.md)
-- [ ] T008 [P] [US2] Unit test for the cache/cancel state machine in `tests/unit/use-imdb-ids.test.ts` (no network — mock `fetch` and `AbortController`, following the mocking style of `tests/unit/tmdb-search-route.test.ts`) — covers: previously-unseen `tmdbId` triggers a fetch, already-cached `tmdbId` (resolved or `null`) triggers no fetch (FR-014), an in-flight fetch is aborted when `results` changes before it resolves (FR-015), cache only grows, never resets between `results` changes within the same hook instance
+- [ ] T008 [P] [US2] Unit test for the cache/cancel state machine in `tests/unit/use-imdb-ids.test.ts` (no network — mock `fetch` and `AbortController`, following the mocking style of `tests/unit/tmdb-search-route.test.ts`) — covers: previously-unseen `tmdbId` triggers a fetch, already-cached `tmdbId` (resolved or `null`) triggers no fetch (FR-014), an in-flight fetch is aborted when `results` changes before it resolves (FR-015), cache only grows, never resets between `results` changes within the same hook instance; **and** (review finding E2 — FR-016/FR-017/FR-021 volume is satisfied by construction but had no automated assertion): passing a `results` array of length N fires exactly N fetches (minus whatever's already cached), and re-invoking the hook with an unchanged `results` reference/content fires zero additional fetches — turning the "keystroke-disproportionate volume" risk called out in spec.md's feature description into a regression-tested property instead of a manual DevTools-only check (quickstart Scenario 3)
 
 ### Implementation for User Story 2
 
@@ -95,11 +95,11 @@ Single Next.js App Router project (matches 001/002 — no frontend/backend split
 
 ### Tests for User Story 3
 
-- [ ] T014 [P] [US3] Integration test for tri-state `imdbId` handling, added to `tests/integration/movie-entries.test.ts` (same file/mocking pattern as the existing `addMovieToList` tests — `vi.mock("@/app/lib/dal")`, `vi.mock("next/cache")`) plus `vi.mock("@/app/lib/tmdb")` for `resolveImdbId`: omitted `imdbId` on the input → `resolveImdbId` called once, returned value persisted to `movie_entries.imdb_id`; `imdbId: null` on the input → stored as `null` directly, `resolveImdbId` NOT called (FR-023); `imdbId: "tt0133093"` on the input → stored as-is, `resolveImdbId` NOT called (FR-023); a `resolveImdbId` mock that throws is never actually reachable in production per T004's contract, but confirm here that a mock resolving to `null` (simulating failure) still lets the add succeed (`addMovieToList` returns `undefined`, not an error) (FR-008)
+- [ ] T014 [P] [US3] Integration test for tri-state `imdbId` handling, added to `tests/integration/movie-entries.test.ts` (same file/mocking pattern as the existing `addMovieToList` tests — `vi.mock("@/app/lib/dal")`, `vi.mock("next/cache")`) plus `vi.mock("@/app/lib/tmdb")` for `resolveImdbId` and `vi.mock("next/server")` for `after` (mock `after` as `(cb) => cb()` so the scheduled background task runs synchronously and can be awaited in the test — vitest calls `addMovieToList` directly, outside a real Next.js request scope, so the real `after()` would throw per its documented "called outside a request scope" guard; verified against `node_modules/next/dist/server/after/after.js`, research.md §9): omitted `imdbId` on the input → `addMovieToList` returns immediately (assert this resolves before asserting anything about `resolveImdbId`), row is inserted with `imdb_id = null` first, then (after the mocked `after` callback runs) `resolveImdbId` is confirmed called once and its return value persisted to `movie_entries.imdb_id` via the follow-up update; `imdbId: null` on the input → stored as `null` directly, `resolveImdbId` NOT called, no `after` callback scheduled (FR-023); `imdbId: "tt0133093"` on the input → stored as-is, `resolveImdbId` NOT called, no `after` callback scheduled (FR-023); a `resolveImdbId` mock resolving to `null` (simulating failure) → the add still succeeds (`addMovieToList` returns `undefined`, not an error) and returns before the mock is even invoked, confirming FR-008 is unconditional, not timeout-bounded
 
 ### Implementation for User Story 3
 
-- [ ] T015 [US3] Add optional `imdbId?: string | null` to `MovieSnapshot` in `app/(lists)/[listId]/actions.ts`; change `addMovieToList`'s insert to compute `imdbId: movie.imdbId !== undefined ? movie.imdbId : await resolveImdbId(movie.tmdbId)` and persist it in the `db.insert(movieEntries).values({...})` call (data-model.md's "Modified transport shape" section, FR-007/FR-008/FR-023) — import `resolveImdbId` from `app/lib/tmdb.ts`
+- [ ] T015 [US3] Add optional `imdbId?: string | null` to `MovieSnapshot` in `app/(lists)/[listId]/actions.ts`; change `addMovieToList`'s insert to always persist `imdbId: movie.imdbId === undefined ? null : movie.imdbId` immediately — never awaiting TMDB — and capture the inserted row's `id`; when `movie.imdbId === undefined`, additionally call `after(async () => { const id = await resolveImdbId(movie.tmdbId); if (id) await db.update(movieEntries).set({ imdbId: id }).where(eq(movieEntries.id, entryId)); })`, importing `after` from `"next/server"` and `resolveImdbId` from `app/lib/tmdb.ts` — the update is no-op-safe if the row was removed before the task runs, matching `removeMovieFromList`'s existing no-op-safe idiom (data-model.md's redesigned "State flow — add-time IMDb persistence", research.md §9, FR-007/FR-008/FR-023)
 - [ ] T016 [US3] Update `MovieSearch.tsx`'s `handleAdd` (`app/(lists)/[listId]/MovieSearch.tsx`, from T012) to pass `imdbId: cache[result.tmdbId]` into the `addMovieToList` call's movie object (relies on T010/T012 already wiring `useImdbIds` into this file)
 - [ ] T017 [US3] Update `GlobalMovieSearch.tsx`'s `AddToListModal` invocation (`app/search/GlobalMovieSearch.tsx`, from T013) to pass `imdbId: cache[selectedResult.tmdbId]` into the `movie` prop object it constructs (relies on T010/T013 already wiring `useImdbIds` into this file); `AddToListModal.tsx` itself needs no change — it already forwards `movie` as-is through `confirmAddToLists` → `addMovieToListWithOutcome` → `addMovieToList`
 
@@ -121,13 +121,24 @@ Single Next.js App Router project (matches 001/002 — no frontend/backend split
 
 ---
 
-## Phase 7: Polish & Cross-Cutting Concerns
+## Phase 7: Review Coverage Additions (findings E1)
+
+**Purpose**: Close a coverage gap flagged by code review — FR-013 (removal deletes `imdb_id` with the row) had no automated test, only manual QA (T021's Scenario 6). Sibling persistence guarantees on the same column (FR-007/008/023) already get dedicated integration coverage via T014; this brings removal to parity.
+
+- [ ] T022 [P] Add a `describe("removeMovieFromList — imdb_id cleanup (FR-013)")` block to `tests/integration/movie-entries.test.ts` (same mocking pattern as the file's existing tests — `vi.mock("@/app/lib/dal")`, `vi.mock("next/cache")`) asserting: insert an entry with a non-null `imdb_id` (either directly via `db.insert(movieEntries)` or via `addMovieToList` with an explicit string `imdbId`, to avoid needing the T014 `after()`/`resolveImdbId` mocks here), call `removeMovieFromList(entryId)`, then `db.select().from(movieEntries).where(eq(movieEntries.id, entryId))` returns zero rows — confirming the id is gone, not merely nulled out. Note: no existing removal test was found in this codebase to extend (`removeMovieFromList` currently has zero test coverage, in this file or elsewhere) — this is a new `describe` block, not a one-line addition to a pre-existing one.
+
+**Checkpoint**: FR-013 now has automated regression coverage alongside its manual QA scenario (quickstart Scenario 6); a future schema change (e.g. splitting IMDb data into a side table) that silently breaks the cascade now fails `npm test`.
+
+---
+
+## Phase 8: Polish & Cross-Cutting Concerns
 
 **Purpose**: Repo-wide checks and manual verification spanning all stories.
 
 - [ ] T019 [P] Run `npm run lint` and `npm run build` — confirm no type errors across every new/modified file listed in plan.md's Project Structure
-- [ ] T020 Run `npm test` (vitest `unit` + `integration` projects) — confirm T007, T008, T014 pass alongside the full existing suite
+- [ ] T020 Run `npm test` (vitest `unit` + `integration` projects) — confirm T007, T008, T014, T022 pass alongside the full existing suite
 - [ ] T021 Execute [quickstart.md](./quickstart.md) Scenarios 1–7 manually against `npm run dev:test` (teste@teste.com/teste123 — do not seed manually) per this project's local-verification convention; record concrete observations (exact URLs opened, DevTools Network tab request counts per scenario, 360px viewport check results) in the verification commit body per CLAUDE.md's verification-only-commits rule — no bare "pass"/"verified"
+- [ ] T023 **Post-deploy only — not a pre-merge gate; do not block T019–T021 or the PR on this.** Once this feature is deployed to a real Vercel environment (preview or production — never `npm run dev`, `dev:test`, or a local `next build && next start`, none of which suspend the process the way a real serverless function does), execute [quickstart.md](./quickstart.md) Scenario 8: temporarily add an artificial delay to the `after()` callback in `addMovieToList`, deploy to a preview, confirm the add still returns instantly, then confirm minutes later that the entry's `imdb_id` was actually persisted — proving the background task survives real serverless function suspension, not just that its logic is correct under T014's mocked `after()`. Revert the artificial delay before/after this check; it must never reach `main`. This closes the same class of dev-vs-production gap logged in `specs/notes.md`'s 2026-07-25 "Launch-blocking bug invisible to the entire process" entry (a production-only login failure that every `npm run dev`-only validation layer missed). Record concrete observations (deployment URL, exact wait time, whether the link appeared) in the verification commit body per CLAUDE.md's verification-only-commits rule. A failure here is launch-blocking, not a backlog item — do not consider User Story 3 done until it passes.
 
 ---
 
@@ -141,7 +152,8 @@ Single Next.js App Router project (matches 001/002 — no frontend/backend split
 - **User Story 2 (Phase 4)**: Depends on Phase 2 (T003/T004) for T009's route handler. Independent of US1/US3.
 - **User Story 3 (Phase 5)**: Depends on Phase 2 (T003/T004 via T015) and on US2's T010/T012/T013 (useImdbIds wiring) for T016/T017 to read `cache[...]` — cannot start until US2's implementation tasks (not just its tests) are done.
 - **User Story 4 (Phase 6)**: Depends on Phase 1 (T001, the column to write) and Phase 2 (T003, `fetchExternalIds`). Independent of US1/US2/US3 — can run in parallel with any of them once Phase 2 is done.
-- **Polish (Phase 7)**: Depends on all four user stories being complete.
+- **Review Coverage Additions (Phase 7)**: T022 depends on Phase 1 (T001, the column) and on `removeMovieFromList` already existing (it does, unchanged from 001-movie-watchlist) — not on US3's `after()`/`resolveImdbId` wiring, since the test seeds `imdb_id` directly rather than through the add flow. Can run any time after Phase 1.
+- **Polish (Phase 8)**: T019–T021 depend on all four user stories and Phase 7 being complete, and are the actual pre-merge gate. T023 additionally depends on a real Vercel deployment existing (preview or production) — it runs *after* this feature has shipped, is explicitly not a merge blocker, and has no ordering relationship to T019–T021 beyond needing US3 (T015's `after()` wiring) to exist at all.
 
 ### User Story Dependencies
 
@@ -165,7 +177,9 @@ Single Next.js App Router project (matches 001/002 — no frontend/backend split
 - T011 ([P], US2) can run in parallel with T009/T010 — different file.
 - T014 ([P], US3 test) can run in parallel with US1/US2/US4 implementation work.
 - US4's T018 can run in parallel with all of US1/US2/US3 once Phase 2 is done — entirely separate file, no shared runtime code path with the web app.
-- T019 ([P], Polish) can run alongside T020/T021 once all stories are code-complete.
+- T022 ([P], Phase 7) can run in parallel with any of US1/US2/US3/US4 once Phase 1 is done — same file as T014 (`tests/integration/movie-entries.test.ts`) but a separate `describe` block with no shared state.
+- T019 ([P], Polish) can run alongside T020/T021 once all stories (and T022) are code-complete.
+- T023 is not a "parallel opportunity" in the usual sense — it can't start until a real deployment exists, which itself typically follows T019–T021 passing and the PR merging. Scheduling note, not a code dependency.
 
 ---
 
@@ -199,7 +213,9 @@ Task: "Add optional imdbId prop to MovieResultCard in app/components/MovieResult
 3. Add US2 → validate independently → demo (search results now show links live).
 4. Add US3 → validate independently → demo (adding a movie now populates the data US1 renders, going forward).
 5. Add US4 → validate independently → demo (existing 582+ entries backfilled, extending US1 to old data).
-6. Polish (Phase 7) → final verification pass.
+6. Add Phase 7 (T022) → closes the FR-013 automated-coverage gap ahead of final polish.
+7. Polish (Phase 8, T019–T021) → final pre-merge verification pass, then ship.
+8. After deploy: T023 → post-deploy-only confirmation that `after()` survives real serverless function suspension (not required to reach step 7, but required before calling US3 done).
 
 ### Parallel Team Strategy
 
@@ -215,6 +231,8 @@ With multiple developers, after Setup + Foundational:
 
 - [P] tasks = different files, no dependencies on other unfinished tasks in this list.
 - [Story] label maps every phase-3+ task to its user story for traceability.
-- No contract test tasks for `addMovieToList` beyond T014 — it's an amendment to an existing, already-tested Server Action, not a new endpoint; the existing `tests/integration/movie-entries.test.ts` file is extended rather than duplicated.
+- No contract test tasks for `addMovieToList` beyond T014 and T022 — both are amendments to an existing, already-tested Server Action, not a new endpoint; the existing `tests/integration/movie-entries.test.ts` file is extended (twice, in separate `describe` blocks) rather than duplicated.
+- T022 and the T008 amendment (both in Phase 7 / this revision) originate from code-review findings E1 and E2, respectively: FR-013 (removal cascade) and FR-016/FR-017/FR-021 (keystroke-disproportionate volume) each previously relied on manual QA (T021) alone for a property with automatable, cheap coverage. T015's fire-and-forget `after()` redesign (research.md §9) originates from finding I1.
 - Sync `tasks.md` checkboxes in the same commit as each task's implementation (per project convention) — do not batch checkbox updates into a separate pass.
-- Commit after each task or logical group; verification-only commits (e.g. T021) must record concrete observations per CLAUDE.md, never a bare "pass".
+- Commit after each task or logical group; verification-only commits (e.g. T021, T023) must record concrete observations per CLAUDE.md, never a bare "pass".
+- T023 is deliberately excluded from the T019–T021 pre-merge gate: it can only run after a real Vercel deployment exists, and its purpose is specifically to catch a class of bug (`after()`/`waitUntil` wiring silently broken) that is invisible to every check that runs earlier — `npm run dev`, `npm run dev:test`, local `next build && next start`, and T014's mocked-`after()` test all share this blind spot by construction (research.md §9, `specs/notes.md` 2026-07-25). Leave its checkbox unchecked until it's actually been run post-deploy; don't check it off alongside T015 just because the code is written.

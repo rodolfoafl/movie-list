@@ -24,7 +24,7 @@ All other existing columns (`id`, `listId`, `tmdbId`, `title`, `posterPath`, `re
 | `releaseYear` | `number \| null` | unchanged |
 | `imdbId` | `string \| null \| undefined` | NEW, optional. Tri-state per [[research]] §5: `undefined` = no session-cached attempt, `addMovieToList` must perform its own lookup (FR-007/FR-008); `null` = session already attempted and found nothing, stored as-is, no new lookup; `string` = session already resolved this id, stored as-is, no new lookup (FR-023). |
 
-`addMovieToList`'s insert now includes `imdbId: movie.imdbId ?? (await resolveImdbId(movie.tmdbId))` — i.e. only falls through to a fresh lookup when the field is `undefined` (not when it's `null`), matching the tri-state above. `resolveImdbId` (research.md §2) never throws, so this line can never fail the add (FR-008).
+`addMovieToList`'s insert now includes `imdbId: movie.imdbId === undefined ? null : movie.imdbId` — i.e. the row is always inserted immediately, with `null` for both the `null` case and the not-yet-resolved `undefined` case. Only in the `undefined` case does the function additionally schedule an `after()` background task (research.md §9) that calls `resolveImdbId(movie.tmdbId)` and, on a non-null result, runs a no-op-safe `UPDATE movie_entries SET imdb_id = :id WHERE id = :entryId` using the entry id returned by the insert. `resolveImdbId` (research.md §2) never throws, and the background task runs entirely after the action has already returned, so this can never fail or delay the add (FR-008).
 
 ## Reused entity: TMDB Search Result (`TmdbSearchResult`, `app/components/useTmdbSearch.ts`)
 
@@ -84,8 +84,15 @@ query settles (useTmdbSearch → new `results` array)
 user triggers "add" on a search result (in-list MovieSearch, or GlobalMovieSearch → AddToListModal)
   → caller reads cache[result.tmdbId] (may be undefined, null, or a string) into MovieSnapshot.imdbId
   → addMovieToList(listId, movie) called
-      → movie.imdbId === undefined → await resolveImdbId(movie.tmdbId) (fresh lookup, best-effort, never throws)
-      → movie.imdbId !== undefined → use movie.imdbId as-is (string or null), no new lookup (FR-023)
-      → insert movie_entries row with resolved imdbId value
-      → add succeeds and returns exactly as it does today regardless of which branch ran (FR-008)
+      → insert movie_entries row NOW:
+          movie.imdbId === undefined → imdb_id = NULL (not yet resolved)
+          movie.imdbId !== undefined → imdb_id = movie.imdbId as-is (string or null), no lookup at all (FR-023)
+      → action returns immediately after the insert — identical outcome/timing regardless of which
+        branch ran; TMDB is never on the critical path of the add (FR-008, unconditionally, not bounded
+        by a timeout)
+      → only when movie.imdbId === undefined, additionally: after(async () => {
+            const id = await resolveImdbId(movie.tmdbId)   // best-effort, never throws
+            if (id) await db.update(movieEntries).set({ imdbId: id }).where(eq(movieEntries.id, entryId))
+                                                             // no-op if the row was since removed
+          })
 ```
