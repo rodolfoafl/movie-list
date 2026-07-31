@@ -1,9 +1,13 @@
 import Link from "next/link";
 import { Clapperboard } from "lucide-react";
 
+import { getSession } from "../lib/dal";
 import { ThemeToggle } from "./ThemeToggle";
 
-export function AppHeader() {
+export async function AppHeader() {
+  const session = await getSession();
+  const isLoggedIn = Boolean(session?.user?.id);
+
   return (
     <header className="border-b border-on-primary/10 bg-primary">
       <nav className="mx-auto flex w-full max-w-2xl items-center justify-between px-6 py-3">
@@ -15,18 +19,22 @@ export function AppHeader() {
           B&R Filmes
         </Link>
         <div className="flex items-center gap-4">
-          <Link
-            href="/"
-            className="rounded-sm text-sm font-medium text-on-primary transition-[text-decoration] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-on-primary focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
-          >
-            Listas
-          </Link>
-          <Link
-            href="/search"
-            className="rounded-sm text-sm font-medium text-on-primary transition-[text-decoration] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-on-primary focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
-          >
-            Filmes
-          </Link>
+          {isLoggedIn && (
+            <>
+              <Link
+                href="/"
+                className="rounded-sm text-sm font-medium text-on-primary transition-[text-decoration] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-on-primary focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
+              >
+                Listas
+              </Link>
+              <Link
+                href="/search"
+                className="rounded-sm text-sm font-medium text-on-primary transition-[text-decoration] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-on-primary focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
+              >
+                Filmes
+              </Link>
+            </>
+          )}
           <ThemeToggle />
         </div>
       </nav>
