@@ -42,8 +42,8 @@ Single Next.js App Router project (matches 001/002 — no frontend/backend split
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T003 Add `fetchExternalIds(tmdbId: number): Promise<string | null>` to `app/lib/tmdb.ts` — calls `GET https://api.themoviedb.org/3/movie/{tmdbId}?append_to_response=external_ids`, reads `external_ids.imdb_id`, throws on non-2xx/network failure, returns `null` on a 2xx response with no `imdb_id` (genuine no-match) — mirrors `migrate-legacy.ts`'s `resolveTmdbId` throw/null split (research.md §2)
-- [ ] T004 [P] Add `resolveImdbId(tmdbId: number): Promise<string | null>` to `app/lib/tmdb.ts` — thin wrapper around `fetchExternalIds` with `AbortSignal.timeout(5000)`, catches everything (network error, timeout, HTTP error) and collapses to `null`; never throws (research.md §2, FR-008)
+- [x] T003 Add `fetchExternalIds(tmdbId: number): Promise<string | null>` to `app/lib/tmdb.ts` — calls `GET https://api.themoviedb.org/3/movie/{tmdbId}?append_to_response=external_ids`, reads `external_ids.imdb_id`, throws on non-2xx/network failure, returns `null` on a 2xx response with no `imdb_id` (genuine no-match) — mirrors `migrate-legacy.ts`'s `resolveTmdbId` throw/null split (research.md §2)
+- [x] T004 [P] Add `resolveImdbId(tmdbId: number): Promise<string | null>` to `app/lib/tmdb.ts` — thin wrapper around `fetchExternalIds` with `AbortSignal.timeout(5000)`, catches everything (network error, timeout, HTTP error) and collapses to `null`; never throws (research.md §2, FR-008)
 
 **Checkpoint**: `app/lib/tmdb.ts` exposes both the throwing low-level fetch and the safe wrapper — every downstream phase (US1 storage via US3, US2's route, US4's backfill) can now be built.
 
