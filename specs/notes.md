@@ -691,3 +691,66 @@ provisioned with `push` (this app's `DATABASE_URL`, confirmed via
 001-movie-watchlist T009, and evidently `TEST_DATABASE_URL` too) needs
 this one-time backfill before its first `migrate` call, or `migrate` will
 try to recreate tables that already exist and fail outright.
+
+## 2026-07-31 — Fourth branch-discipline lapse: 003-imdb-links' specify ran on main again
+
+The spec.md/checklists commits for 003-imdb-links landed directly on
+`main` before the intended `003-imdb-links` branch existed — discovered
+only when asked "should the plan already be running on a new branch?".
+Recovered via the same branch+reset recipe used the previous times, no
+work lost.
+
+This is at least the third real occurrence of this exact failure mode in
+this project (001-movie-watchlist Phase 1, the legacy-data migration, now
+this), and a structural fix — a pre-commit hook blocking direct commits
+to `main` — was proposed after the first repeat but never actually
+implemented; the human's self-correction ("the mistake was mine, I
+didn't run the branch commands") preempted adopting it at the time.
+Lesson: a fourth occurrence of an already-diagnosed failure mode, with a
+known structural fix still sitting unimplemented, means the fix is now
+overdue rather than optional — worth actually adding the hook, not
+proposing it again.
+
+## 2026-07-31 — `/speckit.analyze` caught a real 5-second blocking bug before any code existed
+
+The add-time IMDb lookup as originally planned (`await resolveImdbId`
+inline, 5s timeout) directly contradicted FR-008/SC-002's "never blocks
+the add" guarantee — a genuine architectural contradiction, not just
+wording, caught by cross-referencing the plan's own chosen mechanism
+against the spec's acceptance criteria, before Phase 3 implementation
+began. Resolved via fire-and-forget using `next/server`'s `after()`, but
+only after verifying (against the installed Next.js 16.2.11 source, not
+memory) both that `after()` is stable on this version and Node runtime,
+AND that a naive "unawaited promise" approach would risk silent failure
+under serverless function suspension — the same category of dev-vs-
+production gap as the 2026-07-25 production login bug, this time caught
+at design time instead of after a production incident. Also verified
+React's Server Action wire format preserves `undefined` distinctly from
+a missing key (Flight's `"$undefined"` sentinel), closing a second,
+smaller verification gap in the same pass.
+
+## 2026-07-31 — Self-caught data-corruption bug in the IMDb backfill script
+
+`scripts/backfill-imdb-ids.ts`'s resolved-row UPDATE initially reused the
+SELECT's `WHERE imdb_id IS NULL` scope instead of `WHERE id = row.id` —
+would have overwritten every still-unresolved row's `imdb_id` with the
+last-resolved movie's id across an entire run. Caught and fixed before
+ever running against any database, real or test. Lesson: UPDATE
+statements built by copy-adapting a SELECT's WHERE clause from elsewhere
+in the same file deserve a specific second look — the error is easy to
+introduce and, since nothing throws, would not surface until someone
+manually noticed identical IMDb links across unrelated movies.
+
+## 2026-07-31 — Backfill re-run behavior: quickstart.md overstated idempotency
+
+`quickstart.md`'s Scenario 5 claimed a re-run reports "zero entries
+scanned" — true only once no permanent orphans remain;
+`contracts/backfill-imdb-ids-script.md`'s own Non-goals section already
+states "no automatic retry — a plain re-run is the retry mechanism,"
+meaning genuine `no_tmdb_match`/`api_error` orphans are rescanned and
+re-attempted against TMDB on every run, forever. Found by actually
+running the scenario, not just reading the script. Corrected the
+wording. Also worth noting as an operational consequence: this script
+must stay a manual, occasional operation — never a scheduled/cron job —
+since permanent orphans would otherwise generate a real TMDB call on
+every scheduled run indefinitely.
