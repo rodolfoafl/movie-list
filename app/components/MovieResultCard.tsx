@@ -1,15 +1,18 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
 
+import { ImdbLink } from "./ImdbLink";
 import type { TmdbSearchResult } from "./useTmdbSearch";
 
 const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w200";
 
 export function MovieResultCard({
   result,
+  imdbId,
   renderAction,
 }: {
   result: TmdbSearchResult;
+  imdbId?: string | null;
   renderAction: (result: TmdbSearchResult) => ReactNode;
 }) {
   return (
@@ -47,6 +50,7 @@ export function MovieResultCard({
           {result.overview}
         </p>
       </div>
+      <ImdbLink imdbId={imdbId} />
       {renderAction(result)}
     </li>
   );
