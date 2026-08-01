@@ -4,12 +4,14 @@ import { Plus } from "lucide-react";
 import { useState } from "react";
 
 import { MovieResultCard } from "@/app/components/MovieResultCard";
+import { useImdbIds } from "@/app/components/useImdbIds";
 import { useTmdbSearch, type TmdbSearchResult } from "@/app/components/useTmdbSearch";
 import { AddToListModal } from "./AddToListModal";
 
 export function GlobalMovieSearch() {
   const [query, setQuery] = useState("");
   const { status, results, retry, reset } = useTmdbSearch(query);
+  const imdbIds = useImdbIds(results);
   const [selectedResult, setSelectedResult] = useState<TmdbSearchResult | null>(null);
 
   return (
@@ -57,6 +59,7 @@ export function GlobalMovieSearch() {
             <MovieResultCard
               key={result.tmdbId}
               result={result}
+              imdbId={imdbIds[result.tmdbId]}
               renderAction={() => (
                 <button
                   type="button"
