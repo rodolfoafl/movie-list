@@ -1,12 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { and, eq } from "drizzle-orm";
 
 import { verifySession } from "@/app/lib/dal";
 import { db } from "@/app/lib/db/client";
 import { isUniqueViolation } from "@/app/lib/db/errors";
 import { movieEntries } from "@/app/lib/db/schema";
+import { resolveImdbId } from "@/app/lib/tmdb";
 
 export type AddMovieState = { error?: string } | undefined;
 
@@ -15,6 +17,7 @@ export type MovieSnapshot = {
   title: string;
   posterPath: string | null;
   releaseYear: number | null;
+  imdbId?: string | null;
 };
 
 export async function addMovieToList(
@@ -38,19 +41,38 @@ export async function addMovieToList(
     return { error: "already_in_list" };
   }
 
+  let entryId: string;
+
   try {
-    await db.insert(movieEntries).values({
-      listId,
-      tmdbId: movie.tmdbId,
-      title: movie.title,
-      posterPath: movie.posterPath,
-      releaseYear: movie.releaseYear,
-    });
+    const [inserted] = await db
+      .insert(movieEntries)
+      .values({
+        listId,
+        tmdbId: movie.tmdbId,
+        title: movie.title,
+        posterPath: movie.posterPath,
+        releaseYear: movie.releaseYear,
+        imdbId: movie.imdbId === undefined ? null : movie.imdbId,
+      })
+      .returning({ id: movieEntries.id });
+    entryId = inserted.id;
   } catch (error) {
     if (isUniqueViolation(error)) {
       return { error: "already_in_list" };
     }
     throw error;
+  }
+
+  if (movie.imdbId === undefined) {
+    after(async () => {
+      const imdbId = await resolveImdbId(movie.tmdbId);
+      if (imdbId) {
+        await db
+          .update(movieEntries)
+          .set({ imdbId })
+          .where(eq(movieEntries.id, entryId));
+      }
+    });
   }
 
   revalidatePath(`/${listId}`);
