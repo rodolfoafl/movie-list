@@ -711,6 +711,22 @@ known structural fix still sitting unimplemented, means the fix is now
 overdue rather than optional — worth actually adding the hook, not
 proposing it again.
 
+**Closing note (2026-08-01)**: the proposed hook is now implemented
+(`.githooks/pre-commit`, wired via a `prepare` npm script that sets
+`core.hooksPath` on every `npm install`) and verified working with a real
+test, not just a code read: `git config --get core.hooksPath` confirmed
+`.githooks`, then a real dummy commit attempted directly on `main`
+(`git commit -m "test: dummy commit to verify pre-commit hook blocks
+main"`) was rejected with exit code 1 and the hook's own message
+(`❌ Direct commits to 'main' are blocked. Create a branch first: git
+checkout -b <name>`) — the scratch file and staged hook were then
+unstaged/removed and the branch returned to `003-imdb-links` with nothing
+else disturbed. This converts the rule from advisory (restated per-prompt,
+broken four times) to structural (enforced by Git itself on any machine
+where `npm install` has run) — the same pattern already applied to
+`dev:test` (2026-07-27) and `seed:users:test` (2026-07-28) for the
+database-safety rules.
+
 ## 2026-07-31 — `/speckit.analyze` caught a real 5-second blocking bug before any code existed
 
 The add-time IMDb lookup as originally planned (`await resolveImdbId`
