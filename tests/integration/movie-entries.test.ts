@@ -14,7 +14,7 @@ vi.mock("next/server", () => ({
   after: vi.fn((cb: () => unknown) => cb()),
 }));
 
-import { addMovieToList } from "@/app/(lists)/[listId]/actions";
+import { addMovieToList, removeMovieFromList } from "@/app/(lists)/[listId]/actions";
 import { db } from "@/app/lib/db/client";
 import { lists, movieEntries } from "@/app/lib/db/schema";
 import { resolveImdbId } from "@/app/lib/tmdb";
@@ -170,5 +170,26 @@ describe("addMovieToList — tri-state imdb_id handling (FR-007/FR-008/FR-023)",
       .from(movieEntries)
       .where(eq(movieEntries.listId, listId));
     expect(row.imdbId).toBeNull();
+  });
+});
+
+describe("removeMovieFromList — imdb_id cleanup (FR-013)", () => {
+  it("deletes the row entirely (imdb_id gone, not merely nulled) when it had a non-null imdb_id", async () => {
+    const listId = await createTestList("US-FR013 Removal");
+
+    await addMovieToList(listId, { ...MATRIX, imdbId: "tt0133093" });
+    const [inserted] = await db
+      .select()
+      .from(movieEntries)
+      .where(eq(movieEntries.listId, listId));
+    expect(inserted.imdbId).toBe("tt0133093");
+
+    await removeMovieFromList(inserted.id);
+
+    const rowsAfterRemoval = await db
+      .select()
+      .from(movieEntries)
+      .where(eq(movieEntries.id, inserted.id));
+    expect(rowsAfterRemoval).toHaveLength(0);
   });
 });
