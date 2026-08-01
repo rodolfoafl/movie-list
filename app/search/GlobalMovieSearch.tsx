@@ -84,6 +84,7 @@ export function GlobalMovieSearch() {
             title: selectedResult.title,
             posterPath: selectedResult.posterPath,
             releaseYear: selectedResult.releaseYear,
+            imdbId: imdbIds[selectedResult.tmdbId],
           }}
           onClose={() => setSelectedResult(null)}
         />

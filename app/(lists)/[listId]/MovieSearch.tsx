@@ -32,6 +32,7 @@ export function MovieSearch({
         title: result.title,
         posterPath: result.posterPath,
         releaseYear: result.releaseYear,
+        imdbId: imdbIds[result.tmdbId],
       });
 
       setAddStatuses((prev) => ({
