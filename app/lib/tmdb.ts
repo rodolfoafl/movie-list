@@ -19,6 +19,7 @@ type TmdbSearchResponse = {
 };
 
 const TMDB_SEARCH_URL = "https://api.themoviedb.org/3/search/movie";
+const TMDB_MOVIE_URL = "https://api.themoviedb.org/3/movie";
 
 export async function searchMovies(query: string): Promise<TmdbSearchResult[]> {
   const url = new URL(TMDB_SEARCH_URL);
@@ -49,4 +50,42 @@ export async function searchMovies(query: string): Promise<TmdbSearchResult[]> {
       posterPath: result.poster_path ?? null,
       overview: result.overview ?? "",
     }));
+}
+
+type TmdbMovieWithExternalIdsResponse = {
+  external_ids?: {
+    imdb_id?: string | null;
+  };
+};
+
+export async function fetchExternalIds(
+  tmdbId: number,
+  init?: RequestInit
+): Promise<string | null> {
+  const url = new URL(`${TMDB_MOVIE_URL}/${tmdbId}`);
+  url.searchParams.set("append_to_response", "external_ids");
+
+  const response = await fetch(url, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${process.env.TMDB_API_KEY}`,
+      Accept: "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`TMDB external_ids fetch failed with status ${response.status}`);
+  }
+
+  const data = (await response.json()) as TmdbMovieWithExternalIdsResponse;
+
+  return data.external_ids?.imdb_id ?? null;
+}
+
+export async function resolveImdbId(tmdbId: number): Promise<string | null> {
+  try {
+    return await fetchExternalIds(tmdbId, { signal: AbortSignal.timeout(5000) });
+  } catch {
+    return null;
+  }
 }

@@ -6,6 +6,12 @@ vi.mock("@/app/lib/dal", () => ({
 vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
 }));
+vi.mock("@/app/lib/tmdb", () => ({
+  resolveImdbId: vi.fn().mockResolvedValue(null),
+}));
+vi.mock("next/server", () => ({
+  after: vi.fn((cb: () => unknown) => cb()),
+}));
 
 import { eq } from "drizzle-orm";
 

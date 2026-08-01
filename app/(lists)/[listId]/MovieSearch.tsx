@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import { useState, useTransition } from "react";
 
 import { MovieResultCard } from "@/app/components/MovieResultCard";
+import { useImdbIds } from "@/app/components/useImdbIds";
 import { useTmdbSearch, type TmdbSearchResult } from "@/app/components/useTmdbSearch";
 import { addMovieToList } from "./actions";
 
@@ -18,6 +19,7 @@ export function MovieSearch({
 }) {
   const [query, setQuery] = useState("");
   const { status, results, retry, reset } = useTmdbSearch(query);
+  const imdbIds = useImdbIds(results);
   const [addStatuses, setAddStatuses] = useState<Record<number, AddStatus>>({});
   const [, startTransition] = useTransition();
   const alreadyInList = new Set(existingTmdbIds);
@@ -30,6 +32,7 @@ export function MovieSearch({
         title: result.title,
         posterPath: result.posterPath,
         releaseYear: result.releaseYear,
+        imdbId: imdbIds[result.tmdbId],
       });
 
       setAddStatuses((prev) => ({
@@ -93,6 +96,7 @@ export function MovieSearch({
               <MovieResultCard
                 key={result.tmdbId}
                 result={result}
+                imdbId={imdbIds[result.tmdbId]}
                 renderAction={() =>
                   isInList ? (
                     <span className="flex-shrink-0 text-sm text-ink-muted">

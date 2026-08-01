@@ -49,3 +49,5 @@ next-env.d.ts
 
 # migration run artifacts
 scripts/data/migration-orphans.json
+scripts/data/backfill-imdb-orphans.json
+.specify/feature.json

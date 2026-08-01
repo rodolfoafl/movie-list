@@ -1,0 +1,1 @@
+ALTER TABLE "movie_entries" ADD COLUMN "imdb_id" text;

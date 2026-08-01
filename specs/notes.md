@@ -601,3 +601,172 @@ than duplicating it here.
   "check every shared-layout component from both a logged-in and
   logged-out perspective" to this project's standing checkpoint habits,
   not just testing the page-level FRs the checkpoint was written for.
+
+## 2026-07-31 — `drizzle-kit migrate` fails against any DB provisioned via `push` (T002, 003-imdb-links) — production pre-step needed
+
+**What happened**: T002 (generate + apply the `imdb_id` migration) ran
+`npx drizzle-kit migrate` against `TEST_DATABASE_URL` and it failed with
+`relation "lists" already exists` while attempting to replay migration
+`0000_thankful_vargas.sql` from scratch. Root cause, confirmed by querying
+`drizzle.__drizzle_migrations` directly: the table existed but had **zero
+rows**. `migrate` has no record of migration 0000 ever running, so it
+tries to reapply every migration in `drizzle/meta/_journal.json` from the
+start — including `CREATE TABLE "lists"`, which collides with the table
+that (per `specs/001-movie-watchlist/tasks.md` T009) was actually created
+via `drizzle-kit generate` + **`drizzle-kit push`**, not `migrate`. `push`
+diffs the live schema directly and never writes to `__drizzle_migrations`
+at all — this gap exists by construction on any DB whose schema was ever
+established via `push`, regardless of which project or environment.
+
+**Fix applied to `TEST_DATABASE_URL` only**: computed the exact
+`sha256(fileContents)` hash and `journal.entries[].when` timestamp
+drizzle-orm itself would compute (`node_modules/drizzle-orm/migrator.js`'s
+`readMigrationFiles`, confirmed by reading that source directly — not
+approximated), verified via `information_schema.columns` that
+`0000_thankful_vargas.sql`'s DDL was in fact already live, then inserted
+one row into `drizzle.__drizzle_migrations` recording migration 0000 as
+already-applied before re-running `migrate` — which then correctly
+applied only `0001_typical_katie_power.sql` (the new `imdb_id` column).
+
+**⚠️ Production pre-step, not yet done**: `DATABASE_URL` (the real app
+database) was also provisioned via `drizzle-kit push` in
+001-movie-watchlist's T009 — never `migrate` — so it almost certainly has
+the identical gap (either no `drizzle.__drizzle_migrations` table at all,
+or one with zero rows) and **will fail the same way** the first time
+anyone runs `drizzle-kit migrate` against it, unless this backfill step
+runs first. This has not been done against `DATABASE_URL` and must not be
+done casually — do it deliberately, once, by whoever owns the production
+deploy, immediately before the first real `drizzle-kit migrate` run
+against it (i.e. as part of shipping 003-imdb-links, or whichever
+migration reaches production first).
+
+**Exact pre-step** (adapt the `.tag` per migration actually already live —
+do not blindly loop over every journal entry; confirm each one's DDL is
+truly present via `information_schema` first, the same way T002 did for
+the test DB, since blindly marking an unapplied migration as "applied"
+would cause its DDL to silently never run):
+
+```bash
+# 1. Confirm the gap exists (empty or missing __drizzle_migrations
+#    despite lists/movie_entries/users already existing):
+node --env-file=.env.local -e "
+const { neon } = require('@neondatabase/serverless');
+const sql = neon(process.env.DATABASE_URL);
+sql\`select table_name from information_schema.tables where table_schema in ('public','drizzle')\`
+  .then(r => console.log(r));
+"
+
+# 2. For each migration confirmed already-live (start with 0000; repeat
+#    per additional pre-existing migration if there ever is one), record
+#    it using drizzle's own hash/timestamp — refuses to run twice:
+node --env-file=.env.local -e "
+const { neon } = require('@neondatabase/serverless');
+const crypto = require('crypto');
+const fs = require('fs');
+const sql = neon(process.env.DATABASE_URL);
+const journal = JSON.parse(fs.readFileSync('drizzle/meta/_journal.json'));
+const entry = journal.entries.find(e => e.tag === '0000_thankful_vargas');
+const query = fs.readFileSync(\`drizzle/\${entry.tag}.sql\`).toString();
+const hash = crypto.createHash('sha256').update(query).digest('hex');
+(async () => {
+  await sql\`CREATE SCHEMA IF NOT EXISTS drizzle\`;
+  await sql\`CREATE TABLE IF NOT EXISTS drizzle.__drizzle_migrations (id SERIAL PRIMARY KEY, hash text NOT NULL, created_at bigint)\`;
+  const existing = await sql\`select count(*)::int as count from drizzle.__drizzle_migrations\`;
+  if (existing[0].count > 0) throw new Error('Refusing: table already has rows.');
+  await sql\`insert into drizzle.__drizzle_migrations (hash, created_at) values (\${hash}, \${entry.when})\`;
+  console.log('Recorded', entry.tag, 'as already applied.');
+})();
+"
+
+# 3. Only now run the real migration — it will apply just the genuinely
+#    new migration(s), e.g. 0001_typical_katie_power.sql (imdb_id):
+npx drizzle-kit migrate
+```
+
+**Lesson**: `drizzle-kit push` and `drizzle-kit migrate` are two
+non-interoperable schema-application paths that silently diverge the
+moment `push` is used even once — `migrate`'s tracking table has no way
+to learn about DDL that `push` already applied. Any environment
+provisioned with `push` (this app's `DATABASE_URL`, confirmed via
+001-movie-watchlist T009, and evidently `TEST_DATABASE_URL` too) needs
+this one-time backfill before its first `migrate` call, or `migrate` will
+try to recreate tables that already exist and fail outright.
+
+## 2026-07-31 — Fourth branch-discipline lapse: 003-imdb-links' specify ran on main again
+
+The spec.md/checklists commits for 003-imdb-links landed directly on
+`main` before the intended `003-imdb-links` branch existed — discovered
+only when asked "should the plan already be running on a new branch?".
+Recovered via the same branch+reset recipe used the previous times, no
+work lost.
+
+This is at least the third real occurrence of this exact failure mode in
+this project (001-movie-watchlist Phase 1, the legacy-data migration, now
+this), and a structural fix — a pre-commit hook blocking direct commits
+to `main` — was proposed after the first repeat but never actually
+implemented; the human's self-correction ("the mistake was mine, I
+didn't run the branch commands") preempted adopting it at the time.
+Lesson: a fourth occurrence of an already-diagnosed failure mode, with a
+known structural fix still sitting unimplemented, means the fix is now
+overdue rather than optional — worth actually adding the hook, not
+proposing it again.
+
+**Closing note (2026-08-01)**: the proposed hook is now implemented
+(`.githooks/pre-commit`, wired via a `prepare` npm script that sets
+`core.hooksPath` on every `npm install`) and verified working with a real
+test, not just a code read: `git config --get core.hooksPath` confirmed
+`.githooks`, then a real dummy commit attempted directly on `main`
+(`git commit -m "test: dummy commit to verify pre-commit hook blocks
+main"`) was rejected with exit code 1 and the hook's own message
+(`❌ Direct commits to 'main' are blocked. Create a branch first: git
+checkout -b <name>`) — the scratch file and staged hook were then
+unstaged/removed and the branch returned to `003-imdb-links` with nothing
+else disturbed. This converts the rule from advisory (restated per-prompt,
+broken four times) to structural (enforced by Git itself on any machine
+where `npm install` has run) — the same pattern already applied to
+`dev:test` (2026-07-27) and `seed:users:test` (2026-07-28) for the
+database-safety rules.
+
+## 2026-07-31 — `/speckit.analyze` caught a real 5-second blocking bug before any code existed
+
+The add-time IMDb lookup as originally planned (`await resolveImdbId`
+inline, 5s timeout) directly contradicted FR-008/SC-002's "never blocks
+the add" guarantee — a genuine architectural contradiction, not just
+wording, caught by cross-referencing the plan's own chosen mechanism
+against the spec's acceptance criteria, before Phase 3 implementation
+began. Resolved via fire-and-forget using `next/server`'s `after()`, but
+only after verifying (against the installed Next.js 16.2.11 source, not
+memory) both that `after()` is stable on this version and Node runtime,
+AND that a naive "unawaited promise" approach would risk silent failure
+under serverless function suspension — the same category of dev-vs-
+production gap as the 2026-07-25 production login bug, this time caught
+at design time instead of after a production incident. Also verified
+React's Server Action wire format preserves `undefined` distinctly from
+a missing key (Flight's `"$undefined"` sentinel), closing a second,
+smaller verification gap in the same pass.
+
+## 2026-07-31 — Self-caught data-corruption bug in the IMDb backfill script
+
+`scripts/backfill-imdb-ids.ts`'s resolved-row UPDATE initially reused the
+SELECT's `WHERE imdb_id IS NULL` scope instead of `WHERE id = row.id` —
+would have overwritten every still-unresolved row's `imdb_id` with the
+last-resolved movie's id across an entire run. Caught and fixed before
+ever running against any database, real or test. Lesson: UPDATE
+statements built by copy-adapting a SELECT's WHERE clause from elsewhere
+in the same file deserve a specific second look — the error is easy to
+introduce and, since nothing throws, would not surface until someone
+manually noticed identical IMDb links across unrelated movies.
+
+## 2026-07-31 — Backfill re-run behavior: quickstart.md overstated idempotency
+
+`quickstart.md`'s Scenario 5 claimed a re-run reports "zero entries
+scanned" — true only once no permanent orphans remain;
+`contracts/backfill-imdb-ids-script.md`'s own Non-goals section already
+states "no automatic retry — a plain re-run is the retry mechanism,"
+meaning genuine `no_tmdb_match`/`api_error` orphans are rescanned and
+re-attempted against TMDB on every run, forever. Found by actually
+running the scenario, not just reading the script. Corrected the
+wording. Also worth noting as an operational consequence: this script
+must stay a manual, occasional operation — never a scheduled/cron job —
+since permanent orphans would otherwise generate a real TMDB call on
+every scheduled run indefinitely.

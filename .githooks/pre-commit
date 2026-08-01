@@ -1,0 +1,9 @@
+#!/bin/sh
+branch=$(git symbolic-ref --short HEAD)
+
+if [ "$branch" = "main" ]; then
+  echo "❌ Direct commits to 'main' are blocked. Create a branch first: git checkout -b <name>"
+  exit 1
+fi
+
+exit 0
