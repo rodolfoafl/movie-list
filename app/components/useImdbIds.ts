@@ -37,13 +37,15 @@ export function createImdbIdsCache(
       const controller = new AbortController();
       pending.push(controller);
 
-      fetcher(result.tmdbId, controller.signal).then((imdbId) => {
-        if (controller.signal.aborted) {
-          return;
-        }
-        cache = { ...cache, [result.tmdbId]: imdbId };
-        onCacheChange(cache);
-      });
+      fetcher(result.tmdbId, controller.signal)
+        .catch(() => null)
+        .then((imdbId) => {
+          if (controller.signal.aborted) {
+            return;
+          }
+          cache = { ...cache, [result.tmdbId]: imdbId };
+          onCacheChange(cache);
+        });
     }
   }
 

@@ -66,11 +66,25 @@ Not a persisted application entity — an end-of-run JSON report, structurally i
 
 ```
 query settles (useTmdbSearch → new `results` array)
-  → useImdbIds effect fires, keyed on `results`
-      → for each result whose tmdbId is NOT already in the session cache:
-          → issue GET /api/tmdb/external-ids?tmdbId=... with its own AbortController
-          → on success or graceful-null response → cache[tmdbId] = imdbId (string | null)
-          → on abort (superseded by next settled query) → discarded, cache untouched
+  → useImdbIds's effect re-runs, keyed on `results`:
+      1. React's effect-cleanup from the *previous* run fires first (automatic,
+         before the new effect body executes) → controller.cancelPending() aborts
+         every AbortController created by the prior pass
+      2. the new effect body calls controller.sync(results), whose own first line
+         also calls cancelPending() — a no-op along this path (React's cleanup
+         already emptied `pending`), but the mechanism that makes cancel-on-supersede
+         hold when sync() is driven directly, outside React (createImdbIdsCache's own
+         unit tests call sync() back-to-back with no effect/cleanup wrapper between
+         calls — the hook is a thin React wrapper around this plain, independently
+         testable state machine, per research.md §4 and the T008 test file)
+      → sync() then, for each result whose tmdbId is NOT already in the session cache:
+          → issues GET /api/tmdb/external-ids?tmdbId=... with its own new AbortController,
+            recorded in `pending`
+          → on resolution, if its controller was NOT aborted in the meantime →
+            cache[tmdbId] = imdbId (string | null), onCacheChange notifies the hook's
+            React state
+          → on abort (superseded by the next settled query, i.e. controller.signal.aborted
+            is true by the time the promise resolves) → discarded, cache untouched
       → for each result whose tmdbId IS already in the session cache (resolved or null):
           → no fetch issued; MovieResultCard receives the cached value immediately
   → card renders immediately with title/poster/overview (unaffected, FR-022);
