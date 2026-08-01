@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { verifySession } from "@/app/lib/dal";
 import { db } from "@/app/lib/db/client";
 import { lists, movieEntries } from "@/app/lib/db/schema";
+import { ImdbLink } from "@/app/components/ImdbLink";
 
 import { MovieSearch } from "./MovieSearch";
 import { WatchedToggle } from "./WatchedToggle";
@@ -175,6 +176,7 @@ export default async function ListDetailPage({
                       </p>
                     )}
                   </div>
+                  <ImdbLink imdbId={entry.imdbId} />
                   <WatchedToggle
                     entryId={entry.id}
                     title={entry.title}

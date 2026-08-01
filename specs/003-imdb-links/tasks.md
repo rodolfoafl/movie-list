@@ -58,7 +58,7 @@ Single Next.js App Router project (matches 001/002 — no frontend/backend split
 ### Implementation for User Story 1
 
 - [x] T005 [P] [US1] Create `ImdbLink` component in `app/components/ImdbLink.tsx` — takes `imdbId: string | null | undefined`, renders `null` when falsy (FR-003), otherwise renders `<a href="https://www.imdb.com/title/${imdbId}/" target="_blank" rel="noopener">IMDb</a>` (plain text, no icon per CLAUDE.md/FR-001) with pt-BR `aria-label`/`title` (e.g. `Abrir página do filme no IMDb`) matching this project's icon-only-button convention for consistency even though this is a text link, focus-visible ring styling matching existing links in `app/(lists)/[listId]/page.tsx`
-- [ ] T006 [US1] Render `<ImdbLink imdbId={entry.imdbId} />` in the entry row in `app/(lists)/[listId]/page.tsx` (inside the `<li>` per entry, alongside `WatchedToggle`, not crowding it — FR-019); include `movieEntries.imdbId` implicitly via the existing `db.select()` (no column list restriction currently limits it — verify the select isn't projecting a narrower column set before assuming it's included)
+- [x] T006 [US1] Render `<ImdbLink imdbId={entry.imdbId} />` in the entry row in `app/(lists)/[listId]/page.tsx` (inside the `<li>` per entry, alongside `WatchedToggle`, not crowding it — FR-019); include `movieEntries.imdbId` implicitly via the existing `db.select()` (no column list restriction currently limits it — verify the select isn't projecting a narrower column set before assuming it's included)
 
 **Checkpoint**: User Story 1 fully functional and independently testable — list-detail entries with a stored `imdb_id` show a working new-tab link; entries without one are unchanged.
 
