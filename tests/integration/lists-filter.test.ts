@@ -13,6 +13,13 @@ async function createTestList(name: string) {
   return row.id;
 }
 
+// The shared TEST_DATABASE_URL can carry stray rows from manual QA sessions
+// that ran outside vitest's afterEach truncate cycle — never assume the
+// table is empty besides what this test itself inserted.
+function zzTestNames(result: { name: string }[]) {
+  return result.filter((row) => row.name.startsWith("zz-test-")).map((row) => row.name);
+}
+
 describe("getVisibleLists — unfiltered branch (contracts/lists-filter-query.md)", () => {
   it("returns all lists, ORDER BY name ASC, when filterValue is undefined", async () => {
     await createTestList("zz-test-Charlie");
@@ -21,7 +28,7 @@ describe("getVisibleLists — unfiltered branch (contracts/lists-filter-query.md
 
     const result = await getVisibleLists(undefined);
 
-    expect(result.map((row) => row.name)).toEqual([
+    expect(zzTestNames(result)).toEqual([
       "zz-test-Alpha",
       "zz-test-Bravo",
       "zz-test-Charlie",
@@ -34,7 +41,7 @@ describe("getVisibleLists — unfiltered branch (contracts/lists-filter-query.md
 
     const result = await getVisibleLists("   ");
 
-    expect(result).toHaveLength(2);
+    expect(zzTestNames(result)).toHaveLength(2);
   });
 });
 
