@@ -18,3 +18,8 @@ export async function getVisibleLists(
     .where(condition)
     .orderBy(asc(lists.name));
 }
+
+export async function hasAnyLists(): Promise<boolean> {
+  const rows = await db.select({ id: lists.id }).from(lists).limit(1);
+  return rows.length > 0;
+}

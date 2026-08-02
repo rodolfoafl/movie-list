@@ -71,7 +71,7 @@ No shared/blocking infrastructure beyond what User Story 1 builds directly. `get
 
 ### Implementation for User Story 2
 
-- [ ] T007 [US2] Implement `hasAnyLists(): Promise<boolean>` in `app/(lists)/queries.ts` (extends T002's file) per `contracts/lists-filter-query.md`: `SELECT lists.id FROM lists LIMIT 1`, return whether a row was found. Makes T006 pass.
+- [x] T007 [US2] Implement `hasAnyLists(): Promise<boolean>` in `app/(lists)/queries.ts` (extends T002's file) per `contracts/lists-filter-query.md`: `SELECT lists.id FROM lists LIMIT 1`, return whether a row was found. Makes T006 pass.
 - [ ] T008 [US2] Modify `app/(lists)/page.tsx` (extends T004's change): when `visibleLists.length === 0`, branch on whether a filter is active — no filter active → keep existing "Nenhuma lista criada ainda." message unchanged (FR-011, US2 Acceptance Scenario 2); filter active → call `hasAnyLists()` (from T007): if `false`, still show "Nenhuma lista criada ainda." (a stale `?q=` on a zero-list workspace, research.md §5); if `true`, show a new, distinct pt-BR "no results for this filter" message (FR-007), with `CreateListForm` remaining visible and usable in all cases (depends on T004, T007).
 
 **Checkpoint**: Both user stories work independently and together — filtering narrows results (US1) and the correct empty-state message shows when a filter matches nothing (US2).
