@@ -46,7 +46,7 @@ No shared/blocking infrastructure beyond what User Story 1 builds directly. `get
 
 > Write T001 first; it must fail (`getVisibleLists` doesn't exist yet) before starting T002.
 
-- [ ] T001 [P] [US1] Integration test for `getVisibleLists` in `tests/integration/lists-filter.test.ts` — against `TEST_DATABASE_URL` (same pattern as `tests/integration/lists.test.ts`: `vi.mock("@/app/lib/dal")`, real `db` insert/select, `zz-test-` prefixed list names per the standing test-data rule). Cover: case-insensitive match (SC-002), accent-sensitivity (`"sessao"` does NOT match `"Sessão"`, spec.md Assumptions), literal `%`/`_`/`\` matching with no wildcard/escape interpretation (FR-013, SC-005), whitespace-only input treated as no filter (Edge Cases), `ORDER BY name ASC` unchanged in both branches (FR-011), and the unfiltered/empty-input branch returning all lists (contracts/lists-filter-query.md).
+- [x] T001 [P] [US1] Integration test for `getVisibleLists` in `tests/integration/lists-filter.test.ts` — against `TEST_DATABASE_URL` (same pattern as `tests/integration/lists.test.ts`: `vi.mock("@/app/lib/dal")`, real `db` insert/select, `zz-test-` prefixed list names per the standing test-data rule). Cover: case-insensitive match (SC-002), accent-sensitivity (`"sessao"` does NOT match `"Sessão"`, spec.md Assumptions), literal `%`/`_`/`\` matching with no wildcard/escape interpretation (FR-013, SC-005), whitespace-only input treated as no filter (Edge Cases), `ORDER BY name ASC` unchanged in both branches (FR-011), and the unfiltered/empty-input branch returning all lists (contracts/lists-filter-query.md).
 
 ### Implementation for User Story 1
 
