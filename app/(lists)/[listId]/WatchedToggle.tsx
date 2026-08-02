@@ -1,8 +1,9 @@
 "use client";
 
 import { Eye, EyeOff, Trash2 } from "lucide-react";
-import { useActionState, useTransition } from "react";
+import { useActionState, useState, useTransition } from "react";
 
+import { ConfirmDialog } from "@/app/components/ConfirmDialog";
 import { removeMovieFromList, toggleWatchedAction } from "./actions";
 
 export function WatchedToggle({
@@ -19,11 +20,10 @@ export function WatchedToggle({
     undefined
   );
   const [isRemoving, startRemoveTransition] = useTransition();
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
 
   function handleRemove() {
-    if (!window.confirm(`Remover "${title}" desta lista?`)) {
-      return;
-    }
+    setShowRemoveConfirm(false);
     startRemoveTransition(async () => {
       await removeMovieFromList(entryId);
     });
@@ -49,7 +49,7 @@ export function WatchedToggle({
         </form>
         <button
           type="button"
-          onClick={handleRemove}
+          onClick={() => setShowRemoveConfirm(true)}
           disabled={isRemoving}
           aria-label={`Remover "${title}" da lista`}
           title={`Remover "${title}" da lista`}
@@ -62,6 +62,15 @@ export function WatchedToggle({
         <p className="text-xs text-warning-text">
           Este filme já foi removido da lista.
         </p>
+      )}
+      {showRemoveConfirm && (
+        <ConfirmDialog
+          open={showRemoveConfirm}
+          title="Remover filme"
+          message={`Remover "${title}" desta lista?`}
+          onConfirm={handleRemove}
+          onCancel={() => setShowRemoveConfirm(false)}
+        />
       )}
     </div>
   );

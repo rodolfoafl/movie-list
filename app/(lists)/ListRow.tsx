@@ -4,11 +4,13 @@ import Link from "next/link";
 import { Trash2 } from "lucide-react";
 import { useActionState, useRef, useState, useTransition } from "react";
 
+import { ConfirmDialog } from "@/app/components/ConfirmDialog";
 import { deleteList, renameList } from "./actions";
 
 export function ListRow({ id, name }: { id: string; name: string }) {
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, startDeleteTransition] = useTransition();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction, pending] = useActionState(
     async (_state: Awaited<ReturnType<typeof renameList>>, formData: FormData) => {
@@ -22,9 +24,7 @@ export function ListRow({ id, name }: { id: string; name: string }) {
   );
 
   function handleDelete() {
-    if (!window.confirm(`Excluir a lista "${name}"? Todos os filmes desta lista serão removidos.`)) {
-      return;
-    }
+    setShowDeleteConfirm(false);
     startDeleteTransition(async () => {
       await deleteList(id);
     });
@@ -93,7 +93,7 @@ export function ListRow({ id, name }: { id: string; name: string }) {
       </button>
       <button
         type="button"
-        onClick={handleDelete}
+        onClick={() => setShowDeleteConfirm(true)}
         disabled={isDeleting}
         aria-label={`Excluir lista "${name}"`}
         title={`Excluir lista "${name}"`}
@@ -101,6 +101,15 @@ export function ListRow({ id, name }: { id: string; name: string }) {
       >
         <Trash2 size={16} aria-hidden="true" />
       </button>
+      {showDeleteConfirm && (
+        <ConfirmDialog
+          open={showDeleteConfirm}
+          title="Excluir lista"
+          message={`Excluir a lista "${name}"? Todos os filmes desta lista serão removidos.`}
+          onConfirm={handleDelete}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
+      )}
     </li>
   );
 }
