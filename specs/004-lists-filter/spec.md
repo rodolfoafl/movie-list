@@ -40,6 +40,10 @@ reappear.
 4. **Given** the user has typed a filter value, **When** they reload the
    page (e.g. via browser refresh) or share the URL, **Then** the same
    filtered view is restored from the URL.
+5. **Given** the user arrived at the overview page from another page (e.g.
+   a header nav link) and then typed a filter value, **When** they press
+   the browser's Back button once, **Then** they return directly to the
+   page they came from — not to an intermediate, less-filtered state.
 
 ---
 
@@ -100,12 +104,19 @@ appears (not the "no lists created yet" message).
   to a single column, the filter input MUST appear above the create-list
   form.
 - **FR-003**: The filter input MUST narrow the visible lists to only those
-  whose name contains the typed text as a case-insensitive substring match.
+  whose name contains the typed text as a case-insensitive substring
+  match. Case-insensitivity applies to letter case only (e.g. "A" matches
+  "a") and MUST NOT incidentally fold or normalize accented characters —
+  "e" MUST NOT match "é" (matching is accent-sensitive; see Assumptions).
 - **FR-004**: Filtering MUST update live as the user types, without
   requiring an explicit submit action (e.g. pressing Enter or a button).
 - **FR-005**: The current filter value MUST be reflected in the page's URL
   as a query parameter, such that reloading the page or sharing the URL
-  reproduces the same filtered view.
+  reproduces the same filtered view. This URL update MUST replace the
+  current browser-history entry (not push a new one) for every
+  keystroke-driven change — typing in the filter field MUST NOT create a
+  new entry in the browser's Back/Forward history; the URL simply always
+  reflects the current value.
 - **FR-006**: List matching MUST be performed server-side (the candidate set
   of lists is narrowed by the query itself, not fetched in full and filtered
   in the browser).
@@ -125,9 +136,19 @@ appears (not the "no lists created yet" message).
   ordering (alphabetical), or any other existing overview-page behavior.
 - **FR-012**: The filter MUST NOT display a loading indicator/spinner while
   narrowing results.
-- **FR-013**: Substring matching MUST treat pattern-special characters in
-  either the filter text or list names as literal characters, not as
-  wildcards.
+- **FR-013**: Substring matching MUST behave as a pure literal-substring
+  test: every character in the filter text — including SQL
+  pattern-metacharacters such as `%` and `_`, and any character an
+  implementation's own escaping mechanism might use (e.g. a backslash) —
+  MUST be matched as itself, never interpreted as a wildcard, escape
+  marker, or other special token. This is a property the matching
+  behavior must satisfy, not a prescription of which mechanism achieves
+  it.
+- **FR-014**: Pressing the browser's Back button while on a filtered
+  overview page MUST return to whatever page or state the user navigated
+  from to reach the overview page — never step backward through
+  intermediate filter values one keystroke at a time. (This follows
+  directly from FR-005's replace-not-push behavior.)
 
 ### Key Entities
 
@@ -150,6 +171,10 @@ appears (not the "no lists created yet" message).
 - **SC-004**: The overview page remains fully usable (no horizontal
   scrolling, both controls reachable and operable by keyboard) at a 360px
   viewport width.
+- **SC-005**: A list whose name contains a literal `%`, `_`, or `\`
+  character is matched only by filter text containing that exact literal
+  sequence — never treated as a wildcard or escape token, and never
+  producing a false match or false non-match because of it.
 
 ## Assumptions
 
@@ -165,3 +190,15 @@ appears (not the "no lists created yet" message).
   already-stored names, not producing new data.
 - This feature does not need its own database migration or new column —
   filtering reuses the existing `lists.name` column.
+- Matching is accent/diacritic-**sensitive**: typing "sessao" does NOT
+  match a list named "Sessão" — an exact substring comparison on the
+  stored characters, not a normalized/accent-folded comparison. This
+  avoids depending on a Postgres extension (e.g. `unaccent`) whose
+  availability on this project's Neon-hosted database has not been
+  verified, and keeps the matching mechanism simple. If accent-insensitive
+  matching is wanted later, it is a deliberate, separate feature change —
+  not an assumed default.
+- The URL's replace-not-push behavior (FR-005/FR-014) applies only to the
+  filter's own keystroke-driven updates; normal navigation to/from the
+  overview page (e.g. via header links) still behaves as ordinary
+  navigation and is unaffected by this rule.
