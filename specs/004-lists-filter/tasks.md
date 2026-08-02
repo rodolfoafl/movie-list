@@ -67,7 +67,7 @@ No shared/blocking infrastructure beyond what User Story 1 builds directly. `get
 
 ### Tests for User Story 2
 
-- [ ] T006 [P] [US2] Integration test for `hasAnyLists` gating in `tests/integration/lists-filter.test.ts` (extends T001's file) per `data-model.md`'s page-level state table: `hasAnyLists()` returns `true`/`false` correctly, and is the correct signal for distinguishing "zero lists overall" (stale/bookmarked `?q=` on an empty workspace) from "lists exist but none match the filter" (quickstart.md Scenario 3).
+- [x] T006 [P] [US2] Integration test for `hasAnyLists` gating in `tests/integration/lists-filter.test.ts` (extends T001's file) per `data-model.md`'s page-level state table: `hasAnyLists()` returns `true`/`false` correctly, and is the correct signal for distinguishing "zero lists overall" (stale/bookmarked `?q=` on an empty workspace) from "lists exist but none match the filter" (quickstart.md Scenario 3).
 
 ### Implementation for User Story 2
 

@@ -4,7 +4,7 @@ vi.mock("@/app/lib/dal", () => ({
   verifySession: vi.fn().mockResolvedValue({ userId: "00000000-0000-0000-0000-000000000000" }),
 }));
 
-import { getVisibleLists } from "@/app/(lists)/queries";
+import { getVisibleLists, hasAnyLists } from "@/app/(lists)/queries";
 import { db } from "@/app/lib/db/client";
 import { lists } from "@/app/lib/db/schema";
 
@@ -126,6 +126,24 @@ describe("getVisibleLists — literal metacharacter matching (FR-013, SC-005)", 
     expect(among(result, [backslashId, noBackslashId]).map((row) => row.name)).toEqual([
       "zz-test-back\\slash",
     ]);
+  });
+});
+
+describe("hasAnyLists — existence check (contracts/lists-filter-query.md, data-model.md page-level state)", () => {
+  it("returns true when at least one list exists", async () => {
+    await createTestList("zz-test-Any List");
+
+    await expect(hasAnyLists()).resolves.toBe(true);
+  });
+
+  it("returns false when no lists exist at all", async () => {
+    // hasAnyLists() has no id/name to scope by (unlike getVisibleLists), so
+    // unlike the `among()` helper above, this case needs the table actually
+    // empty — clear it explicitly rather than assume TEST_DATABASE_URL has
+    // no stray rows left over from a manual QA session (specs/notes.md).
+    await db.delete(lists);
+
+    await expect(hasAnyLists()).resolves.toBe(false);
   });
 });
 
