@@ -783,3 +783,42 @@ regardless. Lesson: the zz-test- prefix rule reduces confusion but
 doesn't prevent accumulation across sessions that don't clean up after
 themselves; worth an occasional manual sweep of TEST_DATABASE_URL
 rather than only reactive fixes when someone notices.
+
+## 2026-08-02 — Production migration-tracking gap closed (the predicted incident, arrived for real)
+
+- **What happened**: clicking into any list broke in both production and
+  local builds (`column "imdb_id" does not exist`, Postgres 42703) —
+  exactly the incident specs/notes.md's 2026-07-31 entry predicted:
+  DATABASE_URL, like TEST_DATABASE_URL before it, was provisioned via
+  `drizzle-kit push` and had no `__drizzle_migrations` tracking, so
+  `drizzle-kit migrate` would fail on its first real run there. The
+  documented pre-step was never actually executed before 003-imdb-links
+  shipped — a real gap between "documented as a future step" and "done."
+- **Resolution**: followed the documented procedure against the real
+  DATABASE_URL, one step at a time with confirmation before each
+  irreversible action: confirmed the gap via information_schema, recomputed
+  (not reused-from-memory) migration 0000's sha256 hash
+  (`29eeec58d82986b3d54f74178a76001aff738b72d61b2a53bc81e7fb9c8f26dd`)
+  and journal timestamp, inserted and re-queried the tracking row before
+  proceeding, then ran the real `drizzle-kit migrate` (applied only 0001,
+  confirmed via output and a fresh information_schema check). Verified via
+  the list-detail page's actual three queries run read-only, rather than
+  pointing a full dev server at production for verification — avoiding the
+  exact class of accidental-write risk logged on 2026-07-27/07-28, adapted
+  because this was real production data, not TEST_DATABASE_URL.
+- **Lesson**: a documented "do this before the next deploy" note is not
+  the same as a completed step — nothing in this project's process gated
+  the 003-imdb-links merge on that pre-step actually running. Worth adding
+  a deployment checklist (or a CI check verifying `__drizzle_migrations`
+  parity before allowing a merge that includes a new migration) rather
+  than relying on a notes.md entry being remembered and manually acted on
+  before the next schema change ships.
+- **Structural risk surfaced**: production and local production-builds
+  share the exact same DATABASE_URL — there is no staging tier. This means
+  any future "verify against a real deployment" check (like
+  003-imdb-links' T023, the after()/waitUntil suspension check) that
+  can't be done read-only carries real risk. Worth considering a low-cost
+  staging branch (Neon's branching feature, already used for
+  TEST_DATABASE_URL, could plausibly extend to a persistent "staging"
+  branch mirroring production schema) before the next feature that needs
+  a genuine deployed-environment write-verification step.
