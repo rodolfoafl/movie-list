@@ -21,7 +21,7 @@ export function CreateListForm() {
     <form
       ref={formRef}
       action={formAction}
-      className="mt-6 flex flex-col gap-2 sm:flex-row sm:items-start"
+      className="flex flex-col gap-2 sm:flex-row sm:items-start"
     >
       <div className="flex-1">
         <label htmlFor="name" className="sr-only">

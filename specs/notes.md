@@ -770,3 +770,16 @@ wording. Also worth noting as an operational consequence: this script
 must stay a manual, occasional operation — never a scheduled/cron job —
 since permanent orphans would otherwise generate a real TMDB call on
 every scheduled run indefinitely.
+
+## 2026-08-01 — Test-DB hygiene debt accumulating (second orphaned-row instance)
+
+A non-`zz-test-`-prefixed row ("QA IMDb Links") was found in
+TEST_DATABASE_URL, left over from an earlier manual QA session — the
+second such orphan found (after 003-imdb-links' QA-T022-A/B). Not
+deleted (not this session's data to touch); instead, the new test
+(T001) was hardened to assert only against its own created rows by
+name/id rather than assuming an empty table — a better practice
+regardless. Lesson: the zz-test- prefix rule reduces confusion but
+doesn't prevent accumulation across sessions that don't clean up after
+themselves; worth an occasional manual sweep of TEST_DATABASE_URL
+rather than only reactive fixes when someone notices.

@@ -1,20 +1,30 @@
-import { asc } from "drizzle-orm";
-
 import { verifySession } from "@/app/lib/dal";
-import { db } from "@/app/lib/db/client";
-import { lists } from "@/app/lib/db/schema";
 import { logoutAction } from "@/app/login/actions";
 
 import { CreateListForm } from "./CreateListForm";
 import { ListRow } from "./ListRow";
+import { ListsFilterInput } from "./ListsFilterInput";
+import { getVisibleLists, hasAnyLists } from "./queries";
 
-export default async function ListsOverviewPage() {
+export default async function ListsOverviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
   await verifySession();
 
-  const allLists = await db
-    .select({ id: lists.id, name: lists.name })
-    .from(lists)
-    .orderBy(asc(lists.name));
+  const { q } = await searchParams;
+  const visibleLists = await getVisibleLists(q);
+
+  let emptyMessage: string | null = null;
+  if (visibleLists.length === 0) {
+    const filterActive = (q ?? "").trim() !== "";
+    if (!filterActive || !(await hasAnyLists())) {
+      emptyMessage = "Nenhuma lista criada ainda.";
+    } else {
+      emptyMessage = "Nenhuma lista encontrada para este filtro.";
+    }
+  }
 
   return (
     <div className="flex flex-1 flex-col bg-paper p-6">
@@ -33,15 +43,18 @@ export default async function ListsOverviewPage() {
           </form>
         </div>
 
-        <CreateListForm />
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <CreateListForm />
+          <div className="order-first sm:order-none">
+            <ListsFilterInput initialQuery={q ?? ""} />
+          </div>
+        </div>
 
-        {allLists.length === 0 ? (
-          <p className="mt-8 text-ink-muted">
-            Nenhuma lista criada ainda.
-          </p>
+        {emptyMessage !== null ? (
+          <p className="mt-8 text-ink-muted">{emptyMessage}</p>
         ) : (
           <ul className="mt-8 space-y-2">
-            {allLists.map((list) => (
+            {visibleLists.map((list) => (
               <ListRow key={list.id} id={list.id} name={list.name} />
             ))}
           </ul>
