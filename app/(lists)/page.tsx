@@ -4,7 +4,7 @@ import { logoutAction } from "@/app/login/actions";
 import { CreateListForm } from "./CreateListForm";
 import { ListRow } from "./ListRow";
 import { ListsFilterInput } from "./ListsFilterInput";
-import { getVisibleLists } from "./queries";
+import { getVisibleLists, hasAnyLists } from "./queries";
 
 export default async function ListsOverviewPage({
   searchParams,
@@ -15,6 +15,16 @@ export default async function ListsOverviewPage({
 
   const { q } = await searchParams;
   const visibleLists = await getVisibleLists(q);
+
+  let emptyMessage: string | null = null;
+  if (visibleLists.length === 0) {
+    const filterActive = (q ?? "").trim() !== "";
+    if (!filterActive || !(await hasAnyLists())) {
+      emptyMessage = "Nenhuma lista criada ainda.";
+    } else {
+      emptyMessage = "Nenhuma lista encontrada para este filtro.";
+    }
+  }
 
   return (
     <div className="flex flex-1 flex-col bg-paper p-6">
@@ -40,10 +50,8 @@ export default async function ListsOverviewPage({
           </div>
         </div>
 
-        {visibleLists.length === 0 ? (
-          <p className="mt-8 text-ink-muted">
-            Nenhuma lista criada ainda.
-          </p>
+        {emptyMessage !== null ? (
+          <p className="mt-8 text-ink-muted">{emptyMessage}</p>
         ) : (
           <ul className="mt-8 space-y-2">
             {visibleLists.map((list) => (
