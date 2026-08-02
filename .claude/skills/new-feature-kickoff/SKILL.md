@@ -106,7 +106,49 @@ see `specs/aquamarine-theme/decision.md` for the precedent.
 - Icons: always `lucide-react`, never hand-rolled SVGs. Icon-only buttons
   always carry a pt-BR `aria-label` (and matching `title`).
 
-## 5. Closing a feature
+## 5. Schema migrations & production deployment
+
+If this feature includes a new Drizzle migration (`drizzle-kit generate`),
+it does **not** automatically become safe to apply the same way against
+every environment. This project's databases were provisioned via
+`drizzle-kit push`, not `generate`+`migrate`, from the start — meaning
+`drizzle.__drizzle_migrations` has a historical tracking gap on **every**
+database this project uses (confirmed on `TEST_DATABASE_URL` 2026-07-31,
+and again on the real `DATABASE_URL` 2026-08-02, when this exact gap broke
+list-detail pages in production after 003-imdb-links merged without the
+documented pre-step ever actually being executed).
+
+- **A migration applied to `TEST_DATABASE_URL` is not the same as it
+  being applied to the real `DATABASE_URL`.** Before considering a
+  feature with a schema change fully shipped, confirm — via a real
+  `information_schema` query against `DATABASE_URL`, not an assumption —
+  whether the new column/table actually exists there.
+- **A `notes.md` entry saying "do this before the next deploy" is not a
+  completed step.** Nothing in this project's process currently gates a
+  merge on it. Treat any outstanding production-migration pre-step as
+  merge-blocking, not a note to revisit later, until an actual automated
+  gate (e.g. a CI check comparing `__drizzle_migrations` state) exists.
+- **If `DATABASE_URL` has the same historical tracking gap** (no
+  `drizzle` schema, or an empty/missing `__drizzle_migrations` table):
+  follow the documented recipe (specs/notes.md, 2026-07-31 and 2026-08-02
+  entries) exactly — recompute the migration's hash fresh from
+  `drizzle/meta/_journal.json` + the file's own contents (never reuse a
+  previously-computed hash from memory, even for the same file), insert
+  and re-query the tracking row to confirm it *before* running the real
+  migration, then run `drizzle-kit migrate` and confirm it applies only
+  the expected new migration(s) — one step at a time, confirming each via
+  a real query before the next, since this touches production data.
+- **This project has no staging tier** — `DATABASE_URL` serves both real
+  production traffic and any local production build. Any
+  "verify against a real deployment" check (e.g. confirming a
+  fire-and-forget background task survives serverless suspension) should
+  prefer read-only verification wherever possible over pointing a live
+  dev server at this database.
+
+## 6. Closing a feature
+
+If this feature included a schema migration, see §5 above **before**
+considering it done — do not defer that check to "after merge, whenever."
 
 - Update `specs/notes.md` with anything genuinely surprising or
   instructive from this cycle — a verified assumption that turned out
