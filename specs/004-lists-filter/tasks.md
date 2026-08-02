@@ -80,7 +80,7 @@ No shared/blocking infrastructure beyond what User Story 1 builds directly. `get
 
 ## Phase 5: Polish & Cross-Cutting Concerns
 
-- [ ] T009 [P] Run `npm test` (vitest — unit + integration projects), `npm run lint`, and `npm run build` (quickstart.md Automated checks) — confirm T001/T006 pass and no type errors across `queries.ts`, `ListsFilterInput.tsx`, `page.tsx`, `CreateListForm.tsx`.
+- [x] T009 [P] Run `npm test` (vitest — unit + integration projects), `npm run lint`, and `npm run build` (quickstart.md Automated checks) — confirm T001/T006 pass and no type errors across `queries.ts`, `ListsFilterInput.tsx`, `page.tsx`, `CreateListForm.tsx`.
 - [ ] T010 Manually validate `quickstart.md` Scenarios 1–8 in a running `npm run dev:test` session (per project convention: never seed the DB manually) — narrow/clear (Scenario 1), case-insensitive/accent-sensitive matching (Scenario 2), no-match vs. zero-lists messaging (Scenario 3), literal `%`/`_`/`\` matching (Scenario 4), whitespace-only input (Scenario 5), URL reproducibility + single Back-press history behavior (Scenario 6), filter/create independence (Scenario 7), and 360px layout + keyboard operability + pt-BR label/placeholder (Scenario 8). Record exact concrete observations (viewport widths tested, DevTools history-entry count, specific list names/filter strings used) in the verification commit body per CLAUDE.md's verification-only-commit convention — no bare "pass"/"verified".
 
 ---
