@@ -93,7 +93,8 @@ export default async function ListDetailPage({
         <section aria-labelledby="movies-heading" className="mt-8">
           <h2
             id="movies-heading"
-            className="text-lg font-medium text-ink"
+            tabIndex={-1}
+            className="text-lg font-medium text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
           >
             Filmes
           </h2>

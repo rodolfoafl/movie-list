@@ -1,7 +1,7 @@
 "use client";
 
 import { Eye, EyeOff, Trash2 } from "lucide-react";
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 
 import { ConfirmDialog } from "@/app/components/ConfirmDialog";
 import { removeMovieFromList, toggleWatchedAction } from "./actions";
@@ -21,9 +21,25 @@ export function WatchedToggle({
   );
   const [isRemoving, startRemoveTransition] = useTransition();
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
+  const removedRef = useRef(false);
+
+  // Removal unmounts this row (its own buttons go with it) once the list
+  // re-renders without this entry. A fixed-delay focus() call right after
+  // the action's promise resolves is too early — Next's router refresh
+  // that actually removes the row from the DOM hasn't landed yet, so
+  // tying this to React's own unmount of this component is the only
+  // timing that's guaranteed to run after the row is really gone.
+  useEffect(() => {
+    return () => {
+      if (removedRef.current) {
+        document.getElementById("movies-heading")?.focus();
+      }
+    };
+  }, []);
 
   function handleRemove() {
     setShowRemoveConfirm(false);
+    removedRef.current = true;
     startRemoveTransition(async () => {
       await removeMovieFromList(entryId);
     });

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Trash2 } from "lucide-react";
-import { useActionState, useRef, useState, useTransition } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 
 import { ConfirmDialog } from "@/app/components/ConfirmDialog";
 import { deleteList, renameList } from "./actions";
@@ -12,6 +12,7 @@ export function ListRow({ id, name }: { id: string; name: string }) {
   const [isDeleting, startDeleteTransition] = useTransition();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const deletedRef = useRef(false);
   const [state, formAction, pending] = useActionState(
     async (_state: Awaited<ReturnType<typeof renameList>>, formData: FormData) => {
       const result = await renameList(id, _state, formData);
@@ -23,8 +24,23 @@ export function ListRow({ id, name }: { id: string; name: string }) {
     undefined
   );
 
+  // Deletion unmounts this row (its own buttons go with it) once the list
+  // re-renders without it. A fixed-delay focus() call right after the
+  // action's promise resolves is too early — Next's router refresh that
+  // actually removes the row from the DOM hasn't landed yet, so tying
+  // this to React's own unmount of this component is the only timing
+  // that's guaranteed to run after the row is really gone.
+  useEffect(() => {
+    return () => {
+      if (deletedRef.current) {
+        document.getElementById("name")?.focus();
+      }
+    };
+  }, []);
+
   function handleDelete() {
     setShowDeleteConfirm(false);
+    deletedRef.current = true;
     startDeleteTransition(async () => {
       await deleteList(id);
     });
