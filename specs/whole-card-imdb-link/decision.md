@@ -57,8 +57,9 @@ Both call sites are a single flex row today:
    type MovieClickableInfoProps = {
      posterPath: string | null;
      title: string;
+     releaseYear?: number | null; // rendered below the title, same position/style on both surfaces (text-sm text-ink-muted, matching the prior per-caller styling)
      imdbId?: string | null;
-     detail: React.ReactNode; // overview text (search) or year + watched-date (list entry) — caller-supplied, since the two surfaces show different secondary content
+     detail?: React.ReactNode; // ONLY the surface-specific secondary content: overview text (search) or the watched-date paragraph (list entry) — releaseYear is no longer part of this slot
    };
    ```
 
@@ -80,11 +81,13 @@ Both call sites are a single flex row today:
 
 - New: `app/components/MovieClickableInfo.tsx`.
 - Modified: `MovieResultCard.tsx` (replace inline poster/title/overview +
-  `<ImdbLink>` with `<MovieClickableInfo detail={overview} .../>`, keep
-  `renderAction(result)` as the sibling right region).
-- Modified: `app/(lists)/[listId]/page.tsx` (same replacement, `detail`
-  slot receives the year/watched-date block; `<WatchedToggle>` becomes the
-  sibling right region, internally unchanged).
+  `<ImdbLink>` with `<MovieClickableInfo releaseYear={result.releaseYear}
+  detail={overview} .../>`, keep `renderAction(result)` as the sibling
+  right region).
+- Modified: `app/(lists)/[listId]/page.tsx` (same replacement,
+  `releaseYear={entry.releaseYear}`; `detail` slot receives only the
+  watched-date paragraph; `<WatchedToggle>` becomes the sibling right
+  region, internally unchanged).
 - Deleted or reduced to a pure href-helper: `app/components/ImdbLink.tsx`
   (its rendering responsibility moves into `MovieClickableInfo`; if any
   other call site still needs a standalone text link, keep a minimal

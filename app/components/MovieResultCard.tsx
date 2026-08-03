@@ -1,10 +1,7 @@
-import Image from "next/image";
 import type { ReactNode } from "react";
 
-import { ImdbLink } from "./ImdbLink";
+import { MovieClickableInfo } from "./MovieClickableInfo";
 import type { TmdbSearchResult } from "./useTmdbSearch";
-
-const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w200";
 
 export function MovieResultCard({
   result,
@@ -16,42 +13,17 @@ export function MovieResultCard({
   renderAction: (result: TmdbSearchResult) => ReactNode;
 }) {
   return (
-    <li className="flex items-center gap-3 rounded-lg border border-ink-border/10 bg-surface p-3">
-      <div className="flex h-24 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded bg-decor/20">
-        {result.posterPath ? (
-          <Image
-            src={`${TMDB_POSTER_BASE_URL}${result.posterPath}`}
-            alt=""
-            width={64}
-            height={96}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src="/poster-placeholder.svg"
-            alt=""
-            width={64}
-            height={96}
-            className="h-full w-full object-cover"
-          />
-        )}
+    <li className="flex items-center rounded-lg border border-ink-border/10 bg-surface">
+      <MovieClickableInfo
+        posterPath={result.posterPath}
+        title={result.title}
+        releaseYear={result.releaseYear}
+        imdbId={imdbId}
+        detail={<p className="line-clamp-2">{result.overview}</p>}
+      />
+      <div className="flex flex-shrink-0 items-center gap-2 rounded-r-lg border-l border-ink-border/20 p-3">
+        {renderAction(result)}
       </div>
-      <div className="min-w-0 flex-1">
-        <p className="font-medium text-ink">
-          {result.title}
-          {result.releaseYear && (
-            <span className="ml-1 font-normal text-ink-muted">
-              ({result.releaseYear})
-            </span>
-          )}
-        </p>
-        <p className="line-clamp-2 text-sm text-ink-muted">
-          {result.overview}
-        </p>
-      </div>
-      <ImdbLink imdbId={imdbId} />
-      {renderAction(result)}
     </li>
   );
 }

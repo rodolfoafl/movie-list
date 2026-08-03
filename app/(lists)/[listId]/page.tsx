@@ -1,17 +1,14 @@
 import Link from "next/link";
-import Image from "next/image";
 import { and, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { notFound } from "next/navigation";
 
 import { verifySession } from "@/app/lib/dal";
 import { db } from "@/app/lib/db/client";
 import { lists, movieEntries } from "@/app/lib/db/schema";
-import { ImdbLink } from "@/app/components/ImdbLink";
+import { MovieClickableInfo } from "@/app/components/MovieClickableInfo";
 
 import { MovieSearch } from "./MovieSearch";
 import { WatchedToggle } from "./WatchedToggle";
-
-const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w200";
 
 type WatchedFilter = "all" | "to-watch" | "watched";
 
@@ -139,50 +136,29 @@ export default async function ListDetailPage({
               {visibleEntries.map((entry) => (
                 <li
                   key={entry.id}
-                  className="flex items-center gap-3 rounded-lg border border-ink-border/10 bg-surface p-3"
+                  className="flex items-center rounded-lg border border-ink-border/10 bg-surface"
                 >
-                  <div className="flex h-24 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded bg-decor/20">
-                    {entry.posterPath ? (
-                      <Image
-                        src={`${TMDB_POSTER_BASE_URL}${entry.posterPath}`}
-                        alt=""
-                        width={64}
-                        height={96}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src="/poster-placeholder.svg"
-                        alt=""
-                        width={64}
-                        height={96}
-                        className="h-full w-full object-cover"
-                      />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-ink">
-                      {entry.title}
-                    </p>
-                    {entry.releaseYear && (
-                      <p className="text-sm text-ink-muted">
-                        {entry.releaseYear}
-                      </p>
-                    )}
-                    {entry.watchedAt && (
-                      <p className="text-sm text-success">
-                        Assistido em{" "}
-                        {entry.watchedAt.toLocaleDateString("pt-BR")}
-                      </p>
-                    )}
-                  </div>
-                  <ImdbLink imdbId={entry.imdbId} />
-                  <WatchedToggle
-                    entryId={entry.id}
+                  <MovieClickableInfo
+                    posterPath={entry.posterPath}
                     title={entry.title}
-                    watched={entry.watchedAt !== null}
+                    releaseYear={entry.releaseYear}
+                    imdbId={entry.imdbId}
+                    detail={
+                      entry.watchedAt && (
+                        <p className="text-success">
+                          Assistido em{" "}
+                          {entry.watchedAt.toLocaleDateString("pt-BR")}
+                        </p>
+                      )
+                    }
                   />
+                  <div className="flex flex-shrink-0 items-center rounded-r-lg border-l border-ink-border/20 p-3">
+                    <WatchedToggle
+                      entryId={entry.id}
+                      title={entry.title}
+                      watched={entry.watchedAt !== null}
+                    />
+                  </div>
                 </li>
               ))}
             </ul>
