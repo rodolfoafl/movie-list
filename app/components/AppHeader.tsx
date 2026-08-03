@@ -10,7 +10,7 @@ export async function AppHeader() {
 
   return (
     <header className="border-b border-on-primary/10 bg-primary">
-      <nav className="mx-auto flex w-full max-w-2xl items-center justify-between px-6 py-3">
+      <nav className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-3">
         <Link
           href="/"
           className="flex items-center gap-2 rounded-sm text-sm font-semibold text-on-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-on-primary focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
