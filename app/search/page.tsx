@@ -7,7 +7,7 @@ export default async function SearchPage() {
 
   return (
     <div className="flex flex-1 flex-col bg-paper p-6">
-      <div className="mx-auto w-full max-w-2xl">
+      <div className="mx-auto w-full max-w-5xl">
         <h1
           id="global-search-heading"
           className="text-2xl font-semibold text-ink"

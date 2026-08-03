@@ -28,7 +28,7 @@ export default async function ListsOverviewPage({
 
   return (
     <div className="flex flex-1 flex-col bg-paper p-6">
-      <div className="mx-auto w-full max-w-2xl">
+      <div className="mx-auto w-full max-w-5xl">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold text-ink">
             Minhas listas

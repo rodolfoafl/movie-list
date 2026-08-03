@@ -70,7 +70,7 @@ export default async function ListDetailPage({
 
   return (
     <div className="flex flex-1 flex-col bg-paper p-6">
-      <div className="mx-auto w-full max-w-2xl">
+      <div className="mx-auto w-full max-w-5xl">
         <Link
           href="/"
           className="rounded-sm text-sm text-ink-muted transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
