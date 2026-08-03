@@ -822,3 +822,26 @@ rather than only reactive fixes when someone notices.
   TEST_DATABASE_URL, could plausibly extend to a persistent "staging"
   branch mirroring production schema) before the next feature that needs
   a genuine deployed-environment write-verification step.
+
+## 2026-08-02 — ConfirmDialog: focus-after-destroy required unmount-cleanup timing, not a post-await guess
+
+- **What happened**: after Confirmar on both call sites (delete-list,
+  remove-movie), keyboard focus silently fell back to `<body>` — the
+  triggering button (which held focus) was destroyed by the very action
+  the user confirmed, and window.confirm()'s native behavior never had
+  this problem (the whole page was blocked synchronously). A first fix
+  attempt — calling `.focus()` right after the delete/remove Server Action's
+  promise resolved — didn't reliably work, because Next's router refresh
+  that actually removes the row from the DOM hadn't necessarily landed by
+  then.
+- **Fix**: moved the focus reassignment into the component's own
+  `useEffect` cleanup, gated by a ref set only at Confirmar-time — this
+  ties the focus call to React's actual unmount commit (guaranteed correct
+  timing regardless of how long the server round-trip takes), not an
+  optimistic guess about when the DOM has settled.
+- **Lesson**: "the element that had focus is about to be destroyed by this
+  very action" is a distinct sub-case of destructive-action UX that a
+  generic "return focus somewhere reasonable" requirement doesn't
+  automatically cover — worth remembering this pattern (unmount-cleanup +
+  confirm-time ref gate) the next time a similar destroy-the-focused-item
+  flow needs it, rather than re-deriving the post-await timing bug first.
