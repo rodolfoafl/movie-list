@@ -49,6 +49,18 @@ mid-cycle.
 - **Playwright verification**: for any task with user-visible behavior,
   verify against `npm run dev:test` (never `npm run dev`). Delete any
   test data created during the session afterward and stop the dev server.
+  - **Context hygiene**: MCP tool results (screenshots, accessibility
+  snapshots, console logs) stay in context for the rest of the session —
+  they don't get discarded automatically just because the browser closed.
+  Once a task's Playwright verification is done and its concrete findings
+  are captured in the commit message, `/compact` before starting the next
+  task in the same phase rather than letting raw tool output accumulate
+  across the whole phase.
+- **Session boundary**: this skill's own rule (§4, stop after the phase)
+  is already a natural `/clear` point — what needs to survive into the
+  next phase lives in git (commits, `tasks.md` checkboxes, `notes.md`),
+  not in the live conversation. Prefer starting the next phase's prompt in
+  a fresh session over continuing the same long-running one.
 - **Verification-only commits** (no code diff — viewport checks, keyboard
   audits, manual QA): the commit body must state exact concrete
   observations — specific numbers, paths, counts, URLs — never a bare
