@@ -845,3 +845,28 @@ rather than only reactive fixes when someone notices.
   automatically cover — worth remembering this pattern (unmount-cleanup +
   confirm-time ref gate) the next time a similar destroy-the-focused-item
   flow needs it, rather than re-deriving the post-await timing bug first.
+
+## 2026-08-02 — Shared TEST_DATABASE_URL: automated suite wiped a manual QA fixture (the inverse hygiene problem)
+
+- **What happened**: mid-verification of the whole-card-imdb-link feature,
+  running `npx vitest run` (whose integration project truncates
+  `movie_entries`/`lists`/`users` in `afterEach`, by design, for
+  test-to-test isolation) wiped the manually-created `zz-verify-whole-card`
+  Playwright fixture from the SAME `TEST_DATABASE_URL` that `dev:test`'s
+  manual session was using — confirmed via the dev server's own log
+  showing a 404 on the next request, with no delete action ever invoked.
+  It incidentally served as session cleanup this time, but it means manual
+  QA fixtures do not survive a full test-suite run against the same
+  database.
+- **How this differs from the two prior test-DB hygiene entries**
+  (2026-07-27, 2026-08-01): those were about *leftover* manual data
+  confusing a *later* automated test. This is the reverse direction — a
+  *correctly-functioning* automated suite destroying *in-progress* manual
+  QA data, because both share one database with no isolation between
+  "a human is mid-session" and "the suite just ran."
+- **Lesson**: don't run `npm test` while a `dev:test` Playwright session
+  still has fixtures you need — either finish manual verification first,
+  or expect to recreate fixtures after any interleaved automated run.
+  Neither TEST_DATABASE_URL's role (shared integration-test target) nor
+  dev:test's role (shared manual-QA target) was designed with the other
+  running concurrently in mind.
