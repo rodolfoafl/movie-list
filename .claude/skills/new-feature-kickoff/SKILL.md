@@ -144,6 +144,14 @@ documented pre-step ever actually being executed).
   fire-and-forget background task survives serverless suspension) should
   prefer read-only verification wherever possible over pointing a live
   dev server at this database.
+  - **A one-time data backfill script is part of the same deployment step, not a separate follow-up.** If this feature ships a backfill/population
+  script alongside a schema migration (e.g. `scripts/backfill-*.ts`),
+  running it against the real `DATABASE_URL` is part of shipping the
+  feature — not something to remember later. This project forgot to run
+  both the production migration *and* the production backfill for the
+  same feature (`003-imdb-links`), within two days of each other. Treat a
+  migration + its backfill as one single checklist item, not two separate
+  things to remember.
 
 ## 6. Closing a feature
 
