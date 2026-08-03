@@ -1,8 +1,9 @@
 "use client";
 
 import { Eye, EyeOff, Trash2 } from "lucide-react";
-import { useActionState, useTransition } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 
+import { ConfirmDialog } from "@/app/components/ConfirmDialog";
 import { removeMovieFromList, toggleWatchedAction } from "./actions";
 
 export function WatchedToggle({
@@ -19,11 +20,26 @@ export function WatchedToggle({
     undefined
   );
   const [isRemoving, startRemoveTransition] = useTransition();
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
+  const removedRef = useRef(false);
+
+  // Removal unmounts this row (its own buttons go with it) once the list
+  // re-renders without this entry. A fixed-delay focus() call right after
+  // the action's promise resolves is too early — Next's router refresh
+  // that actually removes the row from the DOM hasn't landed yet, so
+  // tying this to React's own unmount of this component is the only
+  // timing that's guaranteed to run after the row is really gone.
+  useEffect(() => {
+    return () => {
+      if (removedRef.current) {
+        document.getElementById("movies-heading")?.focus();
+      }
+    };
+  }, []);
 
   function handleRemove() {
-    if (!window.confirm(`Remover "${title}" desta lista?`)) {
-      return;
-    }
+    setShowRemoveConfirm(false);
+    removedRef.current = true;
     startRemoveTransition(async () => {
       await removeMovieFromList(entryId);
     });
@@ -49,7 +65,7 @@ export function WatchedToggle({
         </form>
         <button
           type="button"
-          onClick={handleRemove}
+          onClick={() => setShowRemoveConfirm(true)}
           disabled={isRemoving}
           aria-label={`Remover "${title}" da lista`}
           title={`Remover "${title}" da lista`}
@@ -62,6 +78,15 @@ export function WatchedToggle({
         <p className="text-xs text-warning-text">
           Este filme já foi removido da lista.
         </p>
+      )}
+      {showRemoveConfirm && (
+        <ConfirmDialog
+          open={showRemoveConfirm}
+          title="Remover filme"
+          message={`Remover "${title}" desta lista?`}
+          onConfirm={handleRemove}
+          onCancel={() => setShowRemoveConfirm(false)}
+        />
       )}
     </div>
   );

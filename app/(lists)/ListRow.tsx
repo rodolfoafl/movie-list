@@ -2,14 +2,17 @@
 
 import Link from "next/link";
 import { Trash2 } from "lucide-react";
-import { useActionState, useRef, useState, useTransition } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 
+import { ConfirmDialog } from "@/app/components/ConfirmDialog";
 import { deleteList, renameList } from "./actions";
 
 export function ListRow({ id, name }: { id: string; name: string }) {
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, startDeleteTransition] = useTransition();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const deletedRef = useRef(false);
   const [state, formAction, pending] = useActionState(
     async (_state: Awaited<ReturnType<typeof renameList>>, formData: FormData) => {
       const result = await renameList(id, _state, formData);
@@ -21,10 +24,23 @@ export function ListRow({ id, name }: { id: string; name: string }) {
     undefined
   );
 
+  // Deletion unmounts this row (its own buttons go with it) once the list
+  // re-renders without it. A fixed-delay focus() call right after the
+  // action's promise resolves is too early — Next's router refresh that
+  // actually removes the row from the DOM hasn't landed yet, so tying
+  // this to React's own unmount of this component is the only timing
+  // that's guaranteed to run after the row is really gone.
+  useEffect(() => {
+    return () => {
+      if (deletedRef.current) {
+        document.getElementById("name")?.focus();
+      }
+    };
+  }, []);
+
   function handleDelete() {
-    if (!window.confirm(`Excluir a lista "${name}"? Todos os filmes desta lista serão removidos.`)) {
-      return;
-    }
+    setShowDeleteConfirm(false);
+    deletedRef.current = true;
     startDeleteTransition(async () => {
       await deleteList(id);
     });
@@ -93,7 +109,7 @@ export function ListRow({ id, name }: { id: string; name: string }) {
       </button>
       <button
         type="button"
-        onClick={handleDelete}
+        onClick={() => setShowDeleteConfirm(true)}
         disabled={isDeleting}
         aria-label={`Excluir lista "${name}"`}
         title={`Excluir lista "${name}"`}
@@ -101,6 +117,15 @@ export function ListRow({ id, name }: { id: string; name: string }) {
       >
         <Trash2 size={16} aria-hidden="true" />
       </button>
+      {showDeleteConfirm && (
+        <ConfirmDialog
+          open={showDeleteConfirm}
+          title="Excluir lista"
+          message={`Excluir a lista "${name}"? Todos os filmes desta lista serão removidos.`}
+          onConfirm={handleDelete}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
+      )}
     </li>
   );
 }
