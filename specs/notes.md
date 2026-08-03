@@ -870,3 +870,39 @@ rather than only reactive fixes when someone notices.
   Neither TEST_DATABASE_URL's role (shared integration-test target) nor
   dev:test's role (shared manual-QA target) was designed with the other
   running concurrently in mind.
+
+## 2026-08-02 — Second forgotten deployment step for 003-imdb-links: the backfill script
+
+- **What happened**: after the schema-migration gap was fixed earlier
+  today, movie cards in production still linked to the IMDb homepage
+  instead of specific movies — because `scripts/backfill-imdb-ids.ts`
+  (tested and fixed against `TEST_DATABASE_URL` back in 003-imdb-links'
+  Phase 6) had never actually been run against the real `DATABASE_URL`.
+  The redesigned whole-card link (this session's feature) didn't cause
+  this — the old plain-text `ImdbLink` silently rendered nothing when
+  `imdb_id` was `NULL`, hiding the exact same gap; the new "always
+  clickable, homepage fallback" design just made a pre-existing data gap
+  visible for the first time.
+- **Resolution**: ran the backfill against the real `DATABASE_URL` — 584/584
+  entries resolved, 0 orphans. Verified via 5 random-sampled rows (format
+  check) plus one two-way cross-check (direct TMDB API call + a real
+  IMDb page load via Playwright, both matching the DB row exactly) before
+  accepting the suspiciously-clean 100% figure at face value — a "too
+  clean" result got a second look rather than automatic trust, per this
+  project's standing skepticism-of-narration-and-neat-numbers habit.
+- **Why zero orphans made sense on reflection, not just luck**: unlike
+  `migrate-legacy.ts`'s OMDB→TMDB resolution (which legitimately failed
+  for 2 rows with bad source data during the original 2020-data
+  migration), every row in `movie_entries` already carries a
+  known-good `tmdb_id` by construction (NOT NULL, sourced from TMDB
+  search/add flows) — the backfill only needed to fetch each one's
+  already-existing external-ids cross-reference, a much higher-hit-rate
+  operation than resolving an uncertain legacy identifier.
+- **The real lesson**: this is the SECOND forgotten production step for
+  the same feature (003-imdb-links) in two days — first the schema
+  migration, now the data backfill. Both are instances of "documented as
+  a required step, never gated by anything that actually enforces it
+  before/after merge." A feature that ships a migration AND a one-time
+  backfill script has two separate production actions to remember, not
+  one — worth explicitly checklisting both, not just the schema change,
+  the next time a feature includes either.
