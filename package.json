@@ -13,13 +13,18 @@
     "seed:users:test": "node scripts/seed-users-test.mjs",
     "dev:test": "node scripts/dev-test.mjs"
   },
+  "overrides": {
+    "@esbuild-kit/core-utils": {
+      "esbuild": ">=0.25.0"
+    }
+  },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
     "bcryptjs": "^3.0.3",
     "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",
     "lucide-react": "^1.27.0",
-    "next": "16.2.11",
+    "next": "16.3.0",
     "next-auth": "^5.0.0-beta.32",
     "react": "19.2.4",
     "react-dom": "19.2.4"
