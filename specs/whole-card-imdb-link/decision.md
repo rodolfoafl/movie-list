@@ -39,14 +39,51 @@ Both call sites are a single flex row today:
    "after `ImdbLink`" to "the sole content of the right region."
 
 3. **`ImdbLink`'s role changes from rendering its own text link to
-   supplying the new region's href logic.** Extract its
-   `imdbId → href` decision (specific movie page when resolved, IMDb
-   homepage as a graceful fallback when `null`/`undefined` — this
-   "always clickable, destination varies" behavior was already decided
-   when this issue was filed) into the new left-region component itself,
-   rather than keeping `ImdbLink` as a separate rendered element in the
-   row. The distinct `aria-label` per case (specific movie vs. generic
-   IMDb) carries over unchanged.
+   supplying the new region's interactivity decision.** Extract its
+   `imdbId` handling into the new left-region component itself, rather
+   than keeping `ImdbLink` as a separate rendered element in the row.
+   The left region is **conditionally interactive**:
+
+   | `imdbId` | Left region renders as |
+   |---|---|
+   | a resolved `tt…` string | `<a href="https://www.imdb.com/title/{imdbId}/">` with `target="_blank"`, `rel="noopener"`, the `aria-label`/`title` `"Abrir página do filme no IMDb"`, hover/focus `ExternalLink` icon (§5) |
+   | `null` / `undefined` | a plain `<div>` — **no** `href`, no `target`/`rel`, no `aria-label`, no `title`, no hover/focus icon, not focusable |
+
+   The inner content (poster, title, `releaseYear`, `detail`) is
+   **identical** in both branches — only the wrapper element and its
+   interactive affordances differ. No `aria-label` in the null case is
+   deliberate, not an oversight: the region isn't interactive, so there
+   is no control to name, and labelling a non-interactive `<div>` would
+   announce an affordance that doesn't exist.
+
+   **Reverses the original "always clickable, destination varies"
+   decision**, which had the null case fall back to the IMDb homepage.
+   That fallback was decided when the issue was filed, on the assumption
+   that a missing `imdbId` was a rare gap where *some* IMDb destination
+   still beat none.
+
+   Production evidence (2026-08-31 smoke test, finding `F1` —
+   `docs/production-smoke-test.md`) refuted both halves of that
+   assumption:
+
+   - **Not rare.** The null case hit **2 of 7** results on a single
+     query (`Spirited Away`) on the global-search surface, and
+     reproduced independently on the in-list search surface. That is a
+     real, non-trivial frequency, not an edge case.
+   - **Not a graceful degradation.** The affected rows are near-empty
+     TMDB *stub* entries — no overview, no release date, zero votes, and
+     **no external ids of any kind**, not merely a missing IMDb id. The
+     concrete instance found in production was
+     `龙猫&萤火虫之墓诞生物语` (tmdb_id `1684305`). For a stub like
+     this there is no IMDb page to degrade *toward*; the homepage link
+     sends the user somewhere unrelated to the title they clicked. A
+     whole-card link that dead-ends on imdb.com's front page actively
+     misleads — it reads as a broken feature, and the softened
+     `"Abrir IMDb"` label does not rescue it.
+
+   Rendering these rows as inert is the honest signal: the card still
+   shows everything TMDB gave us, and it simply doesn't claim to lead
+   anywhere.
 
 4. **New shared component**: `app/components/MovieClickableInfo.tsx`,
    used by both call sites (mirrors the `MovieResultCard`/`useTmdbSearch`
@@ -97,16 +134,22 @@ Both call sites are a single flex row today:
 
 - No change to `WatchedToggle`'s or the add-to-list button's internal
   behavior, including the `ConfirmDialog` integration just shipped.
-- No change to which movies/entries get a specific-movie vs. homepage
-  link — that resolution logic is unchanged, only where it's rendered.
+- No change to how an `imdbId` is *resolved* (`useImdbIds`, the
+  `/api/tmdb/external-ids` route, the `addMovieToList` tri-state
+  handling) — §3 changes only what the left region renders once
+  resolution has produced an id or a `null`.
 - No visual redesign of the right region's buttons themselves.
 
 ## Verification checklist
 
-- Both call sites: clicking the left region (anywhere within its full
-  bounding box, including whitespace) navigates to the correct IMDb URL
-  in a new tab; the right region's buttons remain independently clickable
-  and unaffected.
+- Both call sites: for an entry **with** an `imdbId`, clicking the left
+  region (anywhere within its full bounding box, including whitespace)
+  navigates to the correct IMDb URL in a new tab; the right region's
+  buttons remain independently clickable and unaffected.
+- For an entry **without** an `imdbId`: the left region contains no
+  anchor element at all, is not reachable by Tab, and shows no
+  hover/focus icon — while still rendering the same poster, title and
+  detail content as the linked case.
 - Icon appears on hover and on `:focus-visible`, not hover-only.
 - Padding-hazard check via `elementFromPoint` at multiple interior points
   (§6).
