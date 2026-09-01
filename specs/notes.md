@@ -978,3 +978,43 @@ rather than only reactive fixes when someone notices.
   actually a project-wide guarantee until it's applied to every tool that
   touches the database — including third-party CLI tools whose default
   behavior was inherited, not designed, by this project.
+
+## 2026-08-31 — Project closed: a retrospective
+
+The roadmap is complete — MVP through seven post-launch feature cycles, a
+dependency-security maintenance pass, and today's closing checklist (repo
+hygiene, a full production smoke test, three real findings from it, and a
+post-upgrade PageSpeed re-check: **100/100/100/100 on both mobile and
+desktop**, up from the original 99/100/100/100 mobile).
+
+Today's smoke test alone found three genuine issues in a single session —
+a UX regression from a deliberate design decision tested against real data
+for the first time (F1: the "always clickable, homepage-fallback" IMDb
+link design produced dead-end links often enough to read as broken, once
+real TMDB stub entries showed up at production scale), a data-integrity
+near-miss from Neon's default clone-on-branch-creation behavior colliding
+with a test harness that assumes an empty database, and a security gap in
+the one database-touching tool (`drizzle-kit push`) that had never been
+brought under this project's "explicit target, no default to
+`DATABASE_URL`" convention. All three were found by actually testing the
+whole system together, in production, rather than trusting that features
+verified in isolation compose safely.
+
+**What this log has actually been for**, in retrospect: not a record of
+things going right, but a chain of moments where a plausible assumption
+was checked against reality and didn't hold — an Auth.js config that
+would have failed every login, a production build that broke under
+`next start` when nothing else did, a batch of commits that narrated
+verification work that never happened, a "documented as done" deployment
+step that wasn't, twice, for two different parts of the same feature.
+Each was caught because something — a compliance audit, a forensic
+timestamp comparison, a source-code citation, a second look at a
+suspiciously clean result — was trusted less than a good explanation.
+
+Two Claude Code skills (`new-feature-kickoff`, `speckit-phase-execution`)
+now carry the load that used to depend on this log being re-read at the
+start of every session. Both were written directly from incidents in this
+file, not from abstract best practice. Whether that's sufficient — whether
+a skill loaded automatically actually holds up better than a rule stated
+in a prompt — is itself exactly the kind of claim this project has learned
+not to accept without testing.
