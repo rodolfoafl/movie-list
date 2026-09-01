@@ -27,11 +27,19 @@ export function LoginForm() {
           >
             E-mail
           </label>
+          {/*
+            React resets this uncontrolled form after the action settles, which
+            restores each field to its defaultValue. Feeding the rejected
+            address back through state therefore repopulates the email while
+            the password (no defaultValue) still clears — a typo'd password
+            shouldn't cost the user their address too.
+          */}
           <input
             id="email"
             name="email"
             type="email"
             required
+            defaultValue={state?.email ?? ""}
             autoComplete="email"
             className="w-full rounded border border-ink-border/15 px-3 py-2 text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
           />

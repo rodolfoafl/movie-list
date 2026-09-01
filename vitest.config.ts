@@ -14,7 +14,9 @@ export default defineConfig({
         test: {
           name: "unit",
           environment: "node",
-          include: ["tests/unit/**/*.test.ts"],
+          // .tsx too: component markup is asserted via
+          // react-dom/server's renderToStaticMarkup, which needs no DOM.
+          include: ["tests/unit/**/*.test.{ts,tsx}"],
         },
       },
       {
