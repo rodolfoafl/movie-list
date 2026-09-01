@@ -20,16 +20,18 @@ Validates the feature end-to-end against the acceptance scenarios in [spec.md](.
 
    | Variable | Example | Purpose |
    |---|---|---|
-   | `DATABASE_URL` | `postgres://...neon.tech/movielist` | Drizzle + Neon driver |
+   | `DATABASE_URL` | `postgres://...neon.tech/movielist` | app runtime connection, read in `app/lib/db/client.ts` |
    | `AUTH_SECRET` | output of `openssl rand -base64 32` | Auth.js session encryption |
    | `TMDB_API_KEY` | from TMDB account settings | server-side only, read in `app/api/tmdb/search/route.ts` |
 
-2. Install dependencies and run migrations:
+2. Install dependencies and run migrations. `drizzle.config.ts` reads `DRIZZLE_TARGET_URL` and intentionally ignores `DATABASE_URL` — with it unset, `drizzle-kit` refuses to run rather than silently pushing schema changes to the app's default database (same convention as `seed:users` below and the `scripts/` tools' `MIGRATION_DATABASE_URL`):
 
    ```bash
    npm install
-   npx drizzle-kit push
+   DRIZZLE_TARGET_URL="$DATABASE_URL" npx drizzle-kit push
    ```
+
+   For QA/agent use, point it at the test branch instead: `DRIZZLE_TARGET_URL="$TEST_DATABASE_URL" npx drizzle-kit push`.
 
 3. Seed the two known users (see [data-model.md](./data-model.md) — `User` entity). `seed:users` targets the database explicitly — pass `--database-url` or set `SEED_DATABASE_URL` — and intentionally ignores `DATABASE_URL` so it never silently writes to the app's default database:
 
