@@ -906,3 +906,75 @@ rather than only reactive fixes when someone notices.
   backfill script has two separate production actions to remember, not
   one — worth explicitly checklisting both, not just the schema change,
   the next time a feature includes either.
+
+## 2026-08-31 — Neon test-branch expiration + accidental production clone wiped test data
+
+- **What happened**: the TEST_DATABASE_URL Neon branch expired (free-tier
+  branch expiration policy). A new branch was created to replace it —
+  but Neon branches inherit their parent's data at creation time, so the
+  new branch was created FROM production, inheriting a full copy of the
+  real 22 lists / 584 entries / users. The very next `npm test` run
+  triggered the integration harness's by-design `afterEach` TRUNCATE
+  against this newly-cloned data, wiping it — not a bug in the harness
+  (it did exactly what it's supposed to do), but a mismatch between "a
+  branch that inherited real data" and "a harness that assumes it's safe
+  to reset."
+- **Recovery**: re-provisioned the branch deliberately via this project's
+  own idempotent scripts (`drizzle-kit push` → `seed:users:test` →
+  `migrate-legacy.ts` → `backfill-imdb-ids.ts`) rather than relying on
+  Neon's clone-from-parent behavior — the correct way to populate this
+  branch, not just a recovery.
+- **Standing rule**: when TEST_DATABASE_URL's Neon branch needs to be
+  recreated (expiration or otherwise), create it EMPTY — do not branch
+  from production. Cloning from production is convenient but hands a
+  live-looking database straight to a test harness whose entire job is to
+  reset it. Populate it via these four commands (the Recovery bullet above
+  records what was actually run at the time; step 1 is written here in its
+  current, executable form — `drizzle.config.ts` now requires an explicit
+  target, see the drizzle-config entry below):
+
+  ```bash
+  DRIZZLE_TARGET_URL="$TEST_DATABASE_URL" npx drizzle-kit push
+  npm run seed:users:test -- --email <email> --password <pw>
+  npx tsx scripts/migrate-legacy.ts --database-url "$TEST_DATABASE_URL"
+  npx tsx scripts/backfill-imdb-ids.ts --database-url "$TEST_DATABASE_URL"
+  ```
+
+  This first step is itself a destructive DDL command with no
+  confirmation prompt (see the drizzle-config entry below) — confirm the
+  target branch is genuinely empty (or that you intend to overwrite it)
+  before running it, not just that DRIZZLE_TARGET_URL is set correctly.
+
+## 2026-08-31 — A near-miss and its fix: drizzle-kit push had no guard against targeting production
+
+- **What happened**: recovering the TEST_DATABASE_URL branch (see the
+  Neon-clone-from-production entry above) required running
+  `drizzle-kit push` — the one database-touching command in this project
+  that never had the "explicit target required, no default to
+  DATABASE_URL" convention every other script
+  (`migrate-legacy.ts`/`backfill-imdb-ids.ts`/`seed-users.ts`) already
+  follows. `drizzle.config.ts` read `process.env.DATABASE_URL` directly
+  and unconditionally. Running the recovery command as originally
+  instructed would have pushed schema DDL straight to production. Caught
+  by reading the config file before executing, not by a guard that
+  existed yet.
+- **Fix**: `drizzle.config.ts` now reads a dedicated `DRIZZLE_TARGET_URL`
+  with no fallback — verified three ways: unset refuses before any
+  connection attempt; a garbage value fails rather than silently falling
+  through to `DATABASE_URL`; and a genuine target-verification test
+  (creating a marker table only on the intended branch, confirming
+  `drizzle-kit push` dropped exactly that table and nothing on the other
+  endpoint) proved the right database was reached — "no changes
+  detected" alone would have been meaningless given both databases share
+  an identical schema.
+- **The sharper finding**: `drizzle-kit push` executes destructive DDL
+  (`DROP TABLE ... CASCADE`, no less) with no confirmation prompt when
+  stdin isn't a TTY — meaning a misdirected push from any script,
+  automation, or CI context wouldn't even get an "are you sure?" before
+  dropping tables. This makes the explicit-target guard load-bearing in a
+  way that isn't obvious just from reading the tool's interactive-mode
+  behavior, where it does prompt.
+- **Lesson**: a convention applied consistently to N scripts isn't
+  actually a project-wide guarantee until it's applied to every tool that
+  touches the database — including third-party CLI tools whose default
+  behavior was inherited, not designed, by this project.
