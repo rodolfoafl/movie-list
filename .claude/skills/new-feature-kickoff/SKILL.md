@@ -44,6 +44,10 @@ spec folder.
 - Any new standalone script that touches the database must require an
   explicit `--database-url` flag or dedicated env var, mirroring
   `scripts/migrate-legacy.ts`'s pattern — never default to `DATABASE_URL`.
+- `drizzle-kit` follows the same rule: `drizzle.config.ts` reads
+  `DRIZZLE_TARGET_URL` and refuses to run when it's unset, so every
+  invocation names its target — e.g.
+  `DRIZZLE_TARGET_URL="$TEST_DATABASE_URL" npx drizzle-kit push`.
 
 ## 3. Choose the right planning cycle
 
@@ -135,7 +139,9 @@ documented pre-step ever actually being executed).
   `drizzle/meta/_journal.json` + the file's own contents (never reuse a
   previously-computed hash from memory, even for the same file), insert
   and re-query the tracking row to confirm it *before* running the real
-  migration, then run `drizzle-kit migrate` and confirm it applies only
+  migration, then run `DRIZZLE_TARGET_URL="$DATABASE_URL" drizzle-kit
+  migrate` (the config has no `DATABASE_URL` fallback — the target is
+  always named explicitly) and confirm it applies only
   the expected new migration(s) — one step at a time, confirming each via
   a real query before the next, since this touches production data.
 - **This project has no staging tier** — `DATABASE_URL` serves both real

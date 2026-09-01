@@ -43,10 +43,17 @@ Four moments worth reading in [`specs/notes.md`](specs/notes.md):
 ```bash
 cp .env.example .env.local   # DATABASE_URL (Neon), AUTH_SECRET, TMDB_API_KEY
 npm install
-npx drizzle-kit push
+DRIZZLE_TARGET_URL="$DATABASE_URL" npx drizzle-kit push
 npm run seed:users -- --database-url "$DATABASE_URL" --email you@example.com --password <pw> --email partner@example.com --password <pw>
 npm run dev
 ```
+
+`drizzle.config.ts` reads `DRIZZLE_TARGET_URL` and **never** falls back to
+`DATABASE_URL` — with it unset, `drizzle-kit` refuses to run rather than
+silently targeting the app's default (production) database. Same convention as
+`seed:users` (`--database-url`/`SEED_DATABASE_URL`) and the `scripts/` migration
+and backfill tools (`MIGRATION_DATABASE_URL`). To point `drizzle-kit` at the test
+branch instead: `DRIZZLE_TARGET_URL="$TEST_DATABASE_URL" npx drizzle-kit push`.
 
 Tests (real Postgres via `TEST_DATABASE_URL` — a Neon branch or local Docker):
 
